@@ -26,7 +26,7 @@ def create_app():
 
     # Register models so Flask-Migrate can detect them
     with app.app_context():
-        from app.models import User, Coach, Exercise 
+        from app.models import User, Coach, CoachAvailability, ClientRequest, Exercise, Notification, Payment
 
     # Register blueprints
 
@@ -36,9 +36,23 @@ def create_app():
     from app.routes.coach_availability_routes import coach_availability_bp
     app.register_blueprint(coach_availability_bp, url_prefix='/api')
 
+    from app.routes.client_request_routes import client_request_bp
+    app.register_blueprint(client_request_bp, url_prefix='/api')
+
     from app.routes.exercise_routes import exercise_bp
     app.register_blueprint(exercise_bp, url_prefix='/api')
 
+    from app.routes.coach_management_routes import coach_management_bp
+    app.register_blueprint(coach_management_bp, url_prefix='/api')
+
+    from app.routes.payment_dashboard_routes import payment_dashboard_bp
+    app.register_blueprint(payment_dashboard_bp, url_prefix='/api')
+
+    from app.routes.notification_routes import notification_bp
+    app.register_blueprint(notification_bp, url_prefix='/api')
+
+    from app.routes.coach_registration_routes import coach_registration_bp
+    app.register_blueprint(coach_registration_bp, url_prefix='/api')
     # Health check route
     @app.route('/')
     def index():
