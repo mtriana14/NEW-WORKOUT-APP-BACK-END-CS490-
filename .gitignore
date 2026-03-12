@@ -1,0 +1,31 @@
+cd fitness-app
+New-Item .gitignore
+```
+
+Pega esto dentro:
+```
+# Environment variables
+.env
+*.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+*.egg-info/
+
+# Migrations (optional, some teams commit these)
+# migrations/
+
+# Node
+node_modules/
+.next/
+
+# System
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
