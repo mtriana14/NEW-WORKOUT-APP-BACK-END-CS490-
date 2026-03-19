@@ -13,18 +13,18 @@ def seed_client_requests():
     mike = User.query.filter_by(email='mike.client@fitnessapp.com').first()
     emily = User.query.filter_by(email='emily.client@fitnessapp.com').first()
     john_coach = User.query.filter_by(email='john.coach@fitnessapp.com').first()
-    coach = Coach.query.filter_by(user_id=john_coach.id).first()
+    coach = Coach.query.filter_by(user_id=john_coach.user_id).first()
 
     requests = [
         ClientRequest(
-            client_id=mike.id,
-            coach_id=coach.id,
+            client_id=mike.user_id,
+            coach_id=coach.coach_id,
             status='pending',
             message='I want to lose weight and build muscle.'
         ),
         ClientRequest(
-            client_id=emily.id,
-            coach_id=coach.id,
+            client_id=emily.user_id,
+            coach_id=coach.coach_id,
             status='accepted',
             message='Looking for a personalized fitness plan.'
         ),
