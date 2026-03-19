@@ -12,25 +12,25 @@ def seed_availability():
         return
 
     john = User.query.filter_by(email='john.coach@fitnessapp.com').first()
-    coach = Coach.query.filter_by(user_id=john.id).first()
+    coach = Coach.query.filter_by(user_id=john.user_id).first()
 
     slots = [
         CoachAvailability(
-            coach_id=coach.id,
+            coach_id=coach.user_id,
             day_of_week='monday',
             start_time=time(9, 0),
             end_time=time(17, 0),
             is_available=True
         ),
         CoachAvailability(
-            coach_id=coach.id,
+            coach_id=coach.user_id,
             day_of_week='wednesday',
             start_time=time(9, 0),
             end_time=time(17, 0),
             is_available=True
         ),
         CoachAvailability(
-            coach_id=coach.id,
+            coach_id=coach.user_id,
             day_of_week='friday',
             start_time=time(9, 0),
             end_time=time(13, 0),
