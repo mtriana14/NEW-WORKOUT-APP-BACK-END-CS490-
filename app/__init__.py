@@ -45,6 +45,8 @@ def create_app():
     app.register_blueprint(users_bp, url_prefix='/api')
     from app.controllers.update_user import update_user_bp
     app.register_blueprint(update_user_bp, url_prefix='/api')
+    from app.controllers.create_user import create_user_bp
+    app.register_blueprint(create_user_bp, url_prefix='/api')
 
     @app.route('/')
     def index():

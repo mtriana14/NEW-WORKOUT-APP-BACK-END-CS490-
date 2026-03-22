@@ -41,7 +41,8 @@ def update_user(user_id: int):
 
         except Exception as e:
              conn.rollback()
-             return jsonify({"Failed":"Some error occured"}), 500
+             print(e)
+             return jsonify({"Failed":"Some error occured", "Error:":f"{e}"}), 500
         finally:
              if cursor:
                   cursor.close()
