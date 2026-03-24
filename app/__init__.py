@@ -23,7 +23,7 @@ def create_app():
     init_db(app)
 
     with app.app_context():
-        from app.models import User, Coach, CoachAvailability, ClientRequest, Exercise, Notification, Payment, CoachRegistration, CoachManagement
+        from app.models import User, Coach, CoachAvailability, ClientRequest, Exercise, Notification, Payment, CoachRegistration, CoachManagement, Hire
 
     from app.routes.auth_routes import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/api')
@@ -41,6 +41,7 @@ def create_app():
     app.register_blueprint(notification_bp, url_prefix='/api')
     from app.routes.coach_registration_routes import coach_registration_bp
     app.register_blueprint(coach_registration_bp, url_prefix='/api')
+    
 
     @app.route('/')
     def index():
