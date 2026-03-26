@@ -16,6 +16,10 @@ def register():
     existing = User.query.filter_by(email=data.get('email')).first()
     if existing:
         return jsonify({'error': 'An account with this email already exists'}), 409
+    
+    existing = User.query.filter_by(username=data.get('username')).first()
+    if existing:
+        return jsonify({'error': 'An account with this username already exists'}), 409
 
     # Hash password
     hashed = bcrypt.hashpw(data.get('password').encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
