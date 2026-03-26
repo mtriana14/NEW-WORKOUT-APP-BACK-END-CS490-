@@ -43,6 +43,8 @@ def create_app():
     app.register_blueprint(coach_registration_bp, url_prefix='/api')
     from app.routes.subscription_routes import subscription_bp
     app.register_blueprint(subscription_bp, url_prefix='/api')
+    from app.routes.dismiss_coach_routes import dismiss_coach_bp
+    app.register_blueprint(dismiss_coach_bp, url_prefix='/api')
     
 
     @app.route('/')
