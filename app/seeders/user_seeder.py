@@ -5,7 +5,6 @@ import bcrypt
 def seed_users():
     """Seed initial users - admin, coaches and clients."""
 
-    # Check if users already exist
     if User.query.count() > 0:
         print('Users already seeded, skipping...')
         return
@@ -15,7 +14,8 @@ def seed_users():
     users = [
         # Admin
         User(
-            name='Admin User',
+            first_name='Admin',
+            last_name='User',
             email='admin@fitnessapp.com',
             password=password,
             role='admin',
@@ -23,14 +23,16 @@ def seed_users():
         ),
         # Coaches
         User(
-            name='John Smith',
+            first_name='John',
+            last_name='Smith',
             email='john.coach@fitnessapp.com',
             password=password,
             role='coach',
             is_active=True
         ),
         User(
-            name='Sarah Johnson',
+            first_name='Sarah',
+            last_name='Johnson',
             email='sarah.coach@fitnessapp.com',
             password=password,
             role='coach',
@@ -38,14 +40,16 @@ def seed_users():
         ),
         # Clients
         User(
-            name='Mike Davis',
+            first_name='Mike',
+            last_name='Davis',
             email='mike.client@fitnessapp.com',
             password=password,
             role='client',
             is_active=True
         ),
         User(
-            name='Emily Brown',
+            first_name='Emily',
+            last_name='Brown',
             email='emily.client@fitnessapp.com',
             password=password,
             role='client',

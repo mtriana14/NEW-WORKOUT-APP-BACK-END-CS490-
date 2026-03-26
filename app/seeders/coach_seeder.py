@@ -14,21 +14,23 @@ def seed_coaches():
 
     coaches = [
         Coach(
-            user_id=john.id,
+            user_id=john.user_id,
             bio='Certified personal trainer with 10 years of experience.',
             specialization='fitness',
             experience_years=10,
             certifications='NASM CPT, ACE',
             hourly_rate=50.00,
+            cost=50.00,
             status='approved'
         ),
         Coach(
-            user_id=sarah.id,
+            user_id=sarah.user_id,
             bio='Nutrition coach specialized in weight loss and muscle gain.',
             specialization='nutrition',
             experience_years=5,
             certifications='Precision Nutrition Level 2',
             hourly_rate=40.00,
+            cost=40.00,
             status='pending'
         ),
     ]

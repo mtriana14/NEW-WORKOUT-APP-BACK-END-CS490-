@@ -9,3 +9,4 @@ from .saved_billing import SavedBilling
 from .payment import Payment
 from .coach_registration import CoachRegistration
 from .coach_management import CoachManagement
+from .hire import Hire
