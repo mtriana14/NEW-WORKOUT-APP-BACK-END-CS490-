@@ -23,7 +23,7 @@ def create_app():
     init_db(app)
 
     with app.app_context():
-        from app.models import User, Coach, CoachAvailability, ClientRequest, Exercise, Notification, Payment, CoachRegistration, CoachManagement
+        from app.models import User, Coach, CoachAvailability, ClientRequest, Exercise, Notification, Payment, CoachRegistration, CoachManagement, Hire
 
     from app.routes.auth_routes import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/api')
@@ -41,6 +41,7 @@ def create_app():
     app.register_blueprint(notification_bp, url_prefix='/api')
     from app.routes.coach_registration_routes import coach_registration_bp
     app.register_blueprint(coach_registration_bp, url_prefix='/api')
+<<<<<<< HEAD
     from app.controllers.getusers import users_bp
     app.register_blueprint(users_bp, url_prefix='/api')
     from app.controllers.update_user import update_user_bp
@@ -49,6 +50,13 @@ def create_app():
     app.register_blueprint(create_user_bp, url_prefix='/api')
     from app.controllers.delete_user import delete_user_bp
     app.register_blueprint(delete_user_bp, url_prefix='/api')
+=======
+    from app.routes.subscription_routes import subscription_bp
+    app.register_blueprint(subscription_bp, url_prefix='/api')
+    from app.routes.dismiss_coach_routes import dismiss_coach_bp
+    app.register_blueprint(dismiss_coach_bp, url_prefix='/api')
+    
+>>>>>>> feature/UC-2.6-dismiss-coach
 
     @app.route('/')
     def index():
