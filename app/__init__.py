@@ -55,6 +55,8 @@ def create_app():
     app.register_blueprint(dismiss_coach_bp, url_prefix='/api')
     from app.routes.checkin_routes import checkin_bp
     app.register_blueprint(checkin_bp, url_prefix='/api')
+    from app.routes.fitnessgoal_routes import fitnessgoal_bp
+    app.register_blueprint(fitnessgoal_bp, url_prefix='/api')
     
 
     @app.route('/')
