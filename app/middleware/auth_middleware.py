@@ -1,6 +1,6 @@
 from functools import wraps
 from flask import jsonify
-from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
+from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity, get_jwt
 
 def login_required(f):
     """Verify that the request has a valid JWT token."""
@@ -8,7 +8,8 @@ def login_required(f):
     def decorated(*args, **kwargs):
         try:
             verify_jwt_in_request()
-        except Exception:
+        except Exception as e:
+            print(f"JWT ERROR: {e}")
             return jsonify({'error': 'Unauthorized - valid token required'}), 401
         return f(*args, **kwargs)
     return decorated
@@ -20,10 +21,11 @@ def admin_required(f):
     def decorated(*args, **kwargs):
         try:
             verify_jwt_in_request()
-            identity = get_jwt_identity()
-            if identity.get('role') != 'admin':
+            claims = get_jwt()
+            if claims.get('role') != 'admin':
                 return jsonify({'error': 'Forbidden - admin access required'}), 403
-        except Exception:
+        except Exception as e:
+            print(f"JWT ERROR: {e}")
             return jsonify({'error': 'Unauthorized - valid token required'}), 401
         return f(*args, **kwargs)
     return decorated
@@ -35,13 +37,15 @@ def coach_required(f):
     def decorated(*args, **kwargs):
         try:
             verify_jwt_in_request()
-            identity = get_jwt_identity()
-            if identity.get('role') != 'coach':
+            claims = get_jwt()
+            if claims.get('role') != 'coach':
                 return jsonify({'error': 'Forbidden - coach access required'}), 403
-        except Exception:
+        except Exception as e:
+            print(f"JWT ERROR: {e}")
             return jsonify({'error': 'Unauthorized - valid token required'}), 401
         return f(*args, **kwargs)
     return decorated
+
 
 
 def coach_or_admin_required(f):
@@ -50,10 +54,11 @@ def coach_or_admin_required(f):
     def decorated(*args, **kwargs):
         try:
             verify_jwt_in_request()
-            identity = get_jwt_identity()
-            if identity.get('role') not in ['coach', 'admin']:
+            claims = get_jwt()
+            if claims.get('role') not in ['coach', 'admin']:
                 return jsonify({'error': 'Forbidden - coach or admin access required'}), 403
-        except Exception:
+        except Exception as e:
+            print(f"JWT ERROR: {e}")
             return jsonify({'error': 'Unauthorized - valid token required'}), 401
         return f(*args, **kwargs)
     return decorated
