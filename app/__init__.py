@@ -41,9 +41,26 @@ def create_app():
     app.register_blueprint(notification_bp, url_prefix='/api')
     from app.routes.coach_registration_routes import coach_registration_bp
     app.register_blueprint(coach_registration_bp, url_prefix='/api')
+    from app.controllers.getusers import users_bp
+    app.register_blueprint(users_bp, url_prefix='/api')
+    from app.controllers.update_user import update_user_bp
+    app.register_blueprint(update_user_bp, url_prefix='/api')
+    from app.controllers.create_user import create_user_bp
+    app.register_blueprint(create_user_bp, url_prefix='/api')
+    from app.controllers.delete_user import delete_user_bp
+    app.register_blueprint(delete_user_bp, url_prefix='/api')
 
     @app.route('/')
     def index():
         return {'message': 'Fitness App API is running'}
+    
+    @app.route('/testdb')
+    def db_check():
+        from .config.db import db
+        try:
+            db.session.execute(db.text('SELECT 1'))
+            return {'status': 'ok', 'database': 'connected'}, 200
+        except Exception as e:
+            return {'status': 'error', 'database': 'unreachable', 'details': str(e)}, 503
 
     return app
