@@ -1,7 +1,7 @@
 from app.config.db import db
 from app.models import User
 from flask import jsonify, Blueprint, request
-from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError, DataError
 
 update_user_bp = Blueprint('update_user', __name__)
 
@@ -49,6 +49,10 @@ def update_user(user_id: int):
              conn.rollback()
              print(e)
              return jsonify({"Failed":"Some error occured", "Error:":f"{e}"}), 500
+        except DataError as e:
+             conn.rollback()
+             print(e)
+             return jsonify({"Failed":"Invalid data present"}), 400
         finally:
              if cursor:
                   cursor.close()

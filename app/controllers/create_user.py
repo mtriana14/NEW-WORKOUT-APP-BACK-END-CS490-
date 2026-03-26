@@ -11,7 +11,7 @@ create_user_bp = Blueprint('create_user', __name__)
 # 201: OK, user was created successfully
 # 400: Some of the missing fields were missing
 # 500: Some bug in the code, notify Justin!!
-@create_user_bp.route('/createuser', methods=["POST"])
+@create_user_bp.route('/auth/register', methods=["POST"])
 def create_user():
    try:
       body = request.json
