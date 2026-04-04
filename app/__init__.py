@@ -61,6 +61,12 @@ def create_app():
     app.register_blueprint(coach_apply_bp, url_prefix='/api')
     from app.routes.review_routes import review_bp
     app.register_blueprint(review_bp, url_prefix='/api')
+    from app.routes.billing_routes import billing_bp
+    app.register_blueprint(billing_bp, url_prefix='/api')
+
+
+
+    
     @app.route('/')
     def index():
         return {'message': 'Fitness App API is running'}
