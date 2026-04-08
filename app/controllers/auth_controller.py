@@ -1,7 +1,8 @@
 from flask import request, jsonify
 from app.config.db import db
 from app.models.user import User
-from flask_jwt_extended import create_access_token, get_jwt_identity
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
+from sqlalchemy.exc import DataError
 import bcrypt
 
 def register():
@@ -100,3 +101,67 @@ def logout():
     return jsonify({
         'message': f'Successfully logged out'
     }), 200
+
+@jwt_required()
+def update_user(): # small modification: user_id is now taken from the JWT token
+        user_id = get_jwt_identity()
+        body = request.json
+        if not body:
+            return jsonify({"Failed":"No body"}), 400
+        fields = [col.name for col in User.__table__.columns]
+        updates= {key: body[key] for key in fields if key in body}
+        if len(body) != len(updates):
+            return jsonify({"Failed":"Invalid fields present", "Fields":fields}), 400
+        
+        query = ", ".join([f"{key} = %s" for key in updates])
+        values = list(updates.values())
+        
+        conn = db.engine.raw_connection()
+        cursor = None
+        try:
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT user_id FROM users WHERE user_id=%s
+            """, (user_id,))
+
+            if not cursor.fetchone():
+                return jsonify({"Failed":"User not found"}), 404
+            
+            cursor.execute(
+                f"UPDATE users SET {query}, updated_at = NOW() WHERE user_id = %s",
+                values + [user_id]
+            )
+
+            conn.commit()
+            return jsonify({"Success":"User updated"}), 200
+
+        except Exception as e:
+             conn.rollback()
+             print(e)
+             return jsonify({"Failed":"Some error occured", "Error:":f"{e}"}), 500
+        except DataError as e:
+             conn.rollback()
+             print(e)
+             return jsonify({"Failed":"Invalid data present"}), 400
+        finally:
+             if cursor:
+                  cursor.close()
+             conn.close()
+
+@jwt_required()
+def delete_user():
+    try:
+        user_id = get_jwt_identity()
+        user = db.session.get(User, user_id)
+        if not user:
+            return jsonify({"Failed":"User not found"}), 404
+        
+        db.session.delete(user)
+        db.session.commit()
+
+        return jsonify({"Success":f"{user_id} has been deleted"}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({"Failed":"Some error occured", "Error:":f"{e}"}), 500

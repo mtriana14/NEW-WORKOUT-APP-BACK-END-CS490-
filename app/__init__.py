@@ -65,6 +65,9 @@ def create_app():
     app.register_blueprint(billing_bp, url_prefix='/api')
     from app.routes.activity_log_routes import activity_log_bp
     app.register_blueprint(activity_log_bp, url_prefix='/api')
+    from app.routes.mealplan_route import mealplan_bp
+    app.register_blueprint(mealplan_bp, url_prefix='/api')
+
 
 
 
