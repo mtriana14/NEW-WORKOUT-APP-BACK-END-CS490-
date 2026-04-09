@@ -40,12 +40,15 @@ def send_request(coach_id):
     data = request.get_json()
 
     # Create the request
-    client_request = ClientRequest(
-        client_id=user_id,
-        coach_id=coach_id,
-        message=data.get('message', '')
-    )
-    db.session.add(client_request)
+    try:
+        client_request = ClientRequest(
+            client_id=user_id,
+            coach_id=coach_id,
+            message=data.get('message', '') 
+        )
+        db.session.add(client_request)
+    except AttributeError:
+        return jsonify({"Error":"No message given"}), 400
 
     # Notify the coach
     notification = Notification(

@@ -10,7 +10,7 @@ def get_pending_coaches():
     pending_coaches = Coach.query.filter_by(status='pending').all()
     result = [
         {
-            'id': coach.id,
+            'id': coach.coach_id,
             'user_id': coach.user_id,
             'name': coach.user.name,
             'email': coach.user.email,
@@ -57,7 +57,7 @@ def get_all_coaches():
     coaches = Coach.query.all()
     result = [
         {
-            'id': coach.id,
+            'id': coach.coach_id,
             'user_id': coach.user_id,
             'name': coach.user.name,
             'email': coach.user.email,

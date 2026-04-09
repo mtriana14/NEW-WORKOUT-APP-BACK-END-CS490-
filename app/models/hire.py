@@ -15,3 +15,13 @@ class Hire(db.Model):
 
     def __repr__(self):
         return f'<Hire {self.user_id} -> {self.coach_id}>'
+    
+    def to_dict(self):
+        return {
+            'hire_id': self.hire_id,
+            'user_id': self.user_id,
+            'coach_id': self.coach_id,
+            'status': self.status,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
