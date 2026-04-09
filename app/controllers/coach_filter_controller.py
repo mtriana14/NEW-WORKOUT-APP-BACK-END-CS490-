@@ -26,59 +26,53 @@ def get_subscribed_coach():
 # STILL WORKING ON THIS DO NOT USE YET
 def search_for_coaches():
     try:
-        name = request.args.get('name', '').strip()
-        specialty = request.args.get('specialty').strip()
-        gym = request.args.get('gym')
-        min_experience = request.args.get('min_experience')
+        first_name = request.args.get('first_name')
+        last_name = request.args.get('last_name')
+        specialty = request.args.get('specialty')
+        param_count = sum([1 for param in [first_name, last_name, specialty] if param])
+        
+        if param_count > 1:
+            return jsonify({"Failed":"Only one or none queires may be present"}), 400
 
         query = db.session.query(Coach, User).join(
             User, Coach.user_id == User.user_id
         ).filter(
-            Coach.status.in_('active')
+            Coach.status.in_(['active', 'approved'])
         )
 
-        if name:
-            search = f"%{name}%"
-            query = query.filter(
-                db.or_(
-                    User.first_name.ilike(search),
-                    User.last_name.ilike(search),
-                    db.func.concat(User.first_name, ' ', User.last_name).ilike(search)
-                )
-            )
+        if first_name:
+            query = query.filter(User.first_name.ilike(f'%{first_name}%'))
+        elif last_name:
+            query = query.filter(User.first_name.ilike(f'%{last_name}%'))
+        elif specialty:
+            query = query.filter(Coach.specialization.ilike(f'%{specialty}%'))
 
-            if specialty:
-                query = query.filter(Coach.specialization == specialty)
+        res = query.all()
+        if not res:
+            return jsonify({"Note":"No coaches found"}), 404
+        
+        coaches = []
+        for coach, user in res:
+            coaches.append({
+                'coach_id': coach.coach_id,
+                'name': f"{user.first_name} {user.last_name}",
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'email': user.email,
+                'phone': user.phone,
+                'profile_photo': user.profile_photo,
+                'specialization': coach.specialization,
+                'certifications': coach.certifications,
+                'experience_years': coach.experience_years,
+                'gym': coach.gym,
+                'cost': float(coach.cost) if coach.cost else None,
+                'hourly_rate': float(coach.hourly_rate) if coach.hourly_rate else None,
+                'bio': coach.bio,
+                'status': coach.status
+            })
 
-            if gym:
-                query = query.filter(Coach.gym.ilike(f"%{gym}%"))
-            
-            if min_experience:
-                query = query.filter(Coach.years_experience >= int(min_experience))
+        return jsonify({"Coaches":coaches}), 200
 
-            res = query.order_by(User.first_name, User.last_name).all()
-
-            if not res:
-                return jsonify({"Note":"No coaches found",
-                                "coaches":[]
-                    }), 404
-            coaches = []
-            for coach, user in res:
-                coaches.append({
-                    'coach_id': coach.coach_id,
-                    'name': f"{user.first_name} {user.last_name}",
-                    'email': user.email,
-                    'profile_photo': user.profile_photo,
-                    'specialization': coach.specialization,
-                    'certifications': coach.certifications,
-                    'experience_years': coach.experience_years,
-                    'gym': coach.gym,
-                    'cost': float(coach.cost) if coach.cost else None,
-                    'hourly_rate': float(coach.hourly_rate) if coach.hourly_rate else None,
-                    'bio': coach.bio,
-                    'status': coach.status
-                })
-            return jsonify({"Coaches":coaches}), 200
     except Exception as e:
         print(e)
         return jsonify({"Failed":f"Invalid query parameters: {e}"}), 400
