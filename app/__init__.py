@@ -12,6 +12,7 @@ def create_app():
 
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False
     app.config['DB_HOST'] = os.getenv('DB_HOST')
     app.config['DB_USER'] = os.getenv('DB_USER')
     app.config['DB_PASSWORD'] = os.getenv('DB_PASSWORD')
