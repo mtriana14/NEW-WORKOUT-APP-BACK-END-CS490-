@@ -113,6 +113,10 @@ def update_user(): # small modification: user_id is now taken from the JWT token
         if len(body) != len(updates):
             return jsonify({"Failed":"Invalid fields present", "Fields":fields}), 400
         
+        if 'password' in updates:
+            hashed = bcrypt.hashpw(updates['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            updates['password'] = hashed
+            
         query = ", ".join([f"{key} = %s" for key in updates])
         values = list(updates.values())
         
