@@ -1,3 +1,6 @@
+# DEPRECEATED 
+# CREATION OF USER IS INSIDE auth_controller.py
+
 from app.config.db import db
 from app.models import User
 from flask import jsonify, Blueprint, request

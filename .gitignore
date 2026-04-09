@@ -29,3 +29,7 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Ignore uploaded files but keep folder structure
+static/uploads/**/*
+!static/uploads/**/.gitkeep
