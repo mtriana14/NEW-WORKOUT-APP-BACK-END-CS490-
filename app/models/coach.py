@@ -22,3 +22,20 @@ class Coach(db.Model):
 
     def __repr__(self):
         return f'<Coach {self.user_id}>'
+    
+    def to_dict(self):
+        return {
+            'coach_id': self.coach_id,
+            'user_id': self.user_id,
+            'specialization': self.specialization,
+            'certifications': self.certifications,
+            'experience_years': self.experience_years,
+            'gym': self.gym,
+            'cost': str(self.cost),
+            'hourly_rate': str(self.hourly_rate) if self.hourly_rate else None,
+            'bio': self.bio,
+            'status': self.status,
+            'verified_at': self.verified_at.isoformat() if self.verified_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }

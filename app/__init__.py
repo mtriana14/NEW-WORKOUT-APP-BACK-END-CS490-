@@ -12,6 +12,7 @@ def create_app():
 
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False
     app.config['DB_HOST'] = os.getenv('DB_HOST')
     app.config['DB_USER'] = os.getenv('DB_USER')
     app.config['DB_PASSWORD'] = os.getenv('DB_PASSWORD')
@@ -23,7 +24,7 @@ def create_app():
     init_db(app)
 
     with app.app_context():
-        from app.models import User, Coach, CoachAvailability, ClientRequest, Exercise, Notification, Payment, CoachRegistration, CoachManagement, Hire
+        from app.models import User, Coach, CoachAvailability, ClientRequest, Exercise, Notification, Payment, CoachRegistration, CoachManagement, Hire, Review, ActivityLog
 
     from app.routes.auth_routes import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/api')
@@ -59,9 +60,22 @@ def create_app():
     app.register_blueprint(fitnessgoal_bp, url_prefix='/api')
     from app.routes.coach_apply_routes import coach_apply_bp
     app.register_blueprint(coach_apply_bp, url_prefix='/api')
+    from app.routes.review_routes import review_bp
+    app.register_blueprint(review_bp, url_prefix='/api')
+    from app.routes.billing_routes import billing_bp
+    app.register_blueprint(billing_bp, url_prefix='/api')
+    from app.routes.activity_log_routes import activity_log_bp
+    app.register_blueprint(activity_log_bp, url_prefix='/api')
     from app.routes.mealplan_route import mealplan_bp
     app.register_blueprint(mealplan_bp, url_prefix='/api')
+    from app.routes.coach_filter_routes import coach_filter_bp
+    app.register_blueprint(coach_filter_bp, url_prefix='/api')
+    from app.routes.coach_dashboard_routes import coach_dashboard_bp
+    app.register_blueprint(coach_dashboard_bp, url_prefix='/api')
 
+
+
+    
     @app.route('/')
     def index():
         return {'message': 'Fitness App API is running'}
