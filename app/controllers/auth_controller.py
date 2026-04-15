@@ -31,17 +31,17 @@ def register():
     db.session.commit()
 
     # Generate token
-    token = create_access_token(identity={
-        'id': user.id,
+    token = create_access_token(identity=str({
+        'id': user.user_id,
         'role': user.role
-    })
+    }))
 
     return jsonify({
         'message': 'Account created successfully',
         'token': token,
         'user': {
-            'id': user.id,
-            'name': user.name,
+            'id': user.user_id,
+            'name': user.first_name,
             'email': user.email,
             'role': user.role
         }
@@ -65,17 +65,17 @@ def login():
         return jsonify({'error': 'Invalid email or password'}), 401
 
     # Generate token
-    token = create_access_token(identity={
-        'id': user.id,
+    token = create_access_token(str({
+        'id': user.user_id,
         'role': user.role
-    })
+    }))
 
     return jsonify({
         'message': 'Login successful',
         'token': token,
         'user': {
-            'id': user.id,
-            'name': user.name,
+            'id': user.user_id,
+            'name': user.first_name,
             'email': user.email,
             'role': user.role
         }

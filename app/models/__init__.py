@@ -5,3 +5,5 @@ from .client_request import ClientRequest
 from .exercise import Exercise
 from .notification import Notification
 from .payment import Payment
+from .coach_registration import CoachRegistration
+from .coach_management import CoachManagement

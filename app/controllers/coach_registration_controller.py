@@ -57,9 +57,9 @@ def get_all_coaches():
     coaches = Coach.query.all()
     result = [
         {
-            'id': coach.id,
+            'id': coach.coach_id,
             'user_id': coach.user_id,
-            'name': coach.user.name,
+            'name': coach.user.first_name,
             'email': coach.user.email,
             'specialization': coach.specialization,
             'status': coach.status,
@@ -69,3 +69,19 @@ def get_all_coaches():
         for coach in coaches
     ]
     return jsonify({'coaches': result}), 200
+
+def change_coach_status(coach_id):
+    """Change the status of a coach."""
+    coach = Coach.query.filter_by(coach_id=coach_id).first()
+    data = request.get_json()
+    if not coach:
+        return jsonify({'error': 'Coach not found'}), 404
+
+    status = data.get('status')
+    print(status)
+    if status not in ['active', 'pending', 'approved', 'suspended', 'disabled', 'rejected']:
+        return jsonify({'error': 'Invalid status'}), 400
+
+    coach.status = status
+    db.session.commit()
+    return jsonify({'message': f'Coach status changed to {status}'}), 200

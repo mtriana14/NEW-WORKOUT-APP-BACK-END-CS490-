@@ -2,18 +2,16 @@ from app.config.db import db
 from datetime import datetime
 
 class CoachAvailability(db.Model):
-    """Coach availability model - stores coach weekly schedule."""
-    __tablename__ = 'coach_availability'
-
-    id = db.Column(db.Integer, primary_key=True)
-    coach_id = db.Column(db.Integer, db.ForeignKey('coaches.id'), nullable=False)
+    __tablename__ = 'CoachAvailability'
+    availability_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    coach_id = db.Column(db.Integer, db.ForeignKey('Coaches.coach_id'), nullable=False)
     day_of_week = db.Column(db.Enum(
-        'monday', 'tuesday', 'wednesday',
-        'thursday', 'friday', 'saturday', 'sunday'
+        'Monday', 'Tuesday', 'Wednesday',
+        'Thursday', 'Friday', 'Saturday', 'Sunday'
     ), nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
-    is_available = db.Column(db.Boolean, default=True)
+    is_available = db.Column(db.Boolean, nullable=False, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
