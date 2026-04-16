@@ -69,10 +69,13 @@ def login():
         return jsonify({'error': 'Invalid email or password'}), 401
 
     # Verify password
-    if not bcrypt.checkpw(data.get('password').encode('utf-8'), user.password.encode('utf-8')):
-        return jsonify({'error': 'Invalid email or password'}), 401
-
-    # Update last login
+    try:
+        if not bcrypt.checkpw(data.get('password').encode('utf-8'), user.password.encode('utf-8')):
+            return jsonify({'error': 'Invalid email or password'}), 401
+    except ValueError: # this is for when the salt is invalid. It resalts the password and reattempts the login
+        hashed = bcrypt.hashpw(data.get('password').encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        user.password = hashed
+        login()
     user.last_login = db.func.now()
     db.session.commit()
 
