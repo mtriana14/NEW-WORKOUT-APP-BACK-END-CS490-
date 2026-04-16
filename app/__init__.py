@@ -16,6 +16,7 @@ def create_app():
     app.config['DB_USER'] = os.getenv('DB_USER')
     app.config['DB_PASSWORD'] = os.getenv('DB_PASSWORD')
     app.config['DB_NAME'] = os.getenv('DB_NAME')
+    app.config['DB_PORT'] = os.getenv('DB_PORT', '3306')
 
     CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
     JWTManager(app)
