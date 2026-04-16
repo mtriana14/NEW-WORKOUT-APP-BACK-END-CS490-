@@ -8,11 +8,11 @@ migrate = Migrate()
 def init_db(app):
     app.config['SQLALCHEMY_DATABASE_URI'] = (
         f"mysql+pymysql://"
-        f"{os.environ.get('MYSQLUSER') or os.environ.get('DB_USER', 'root')}:"
-        f"{os.environ.get('MYSQLPASSWORD') or os.environ.get('DB_PASSWORD', '')}@"
-        f"{os.environ.get('MYSQLHOST') or os.environ.get('DB_HOST', 'localhost')}:"
-        f"{os.environ.get('MYSQLPORT') or os.environ.get('DB_PORT', '3306')}/"
-        f"{os.environ.get('MYSQLDATABASE') or os.environ.get('DB_NAME', 'fitness_app')}"
+        f"{os.environ.get('MYSQLUSER', 'root')}:"
+        f"{os.environ.get('MYSQLPASSWORD', '')}@"
+        f"{os.environ.get('MYSQLHOST', 'localhost')}:"
+        f"{int(os.environ.get('MYSQLPORT', 3306))}/"
+        f"{os.environ.get('MYSQLDATABASE', 'railway')}"
     )
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)
