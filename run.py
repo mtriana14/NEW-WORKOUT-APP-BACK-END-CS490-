@@ -5,7 +5,7 @@ app = create_app()
 
 with app.app_context():
     from app.seeders.run_seeders import run_all_seeders
-    run_all_seeders()
+    #run_all_seeders()
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
