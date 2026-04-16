@@ -21,141 +21,142 @@ def get_pending_registrations():
         ).all()
 
         if not pending:
-            return jsonify({"Note":"No pending registrations",
-                            "registrations":[]
-                    }), 200
-        
+            return jsonify({"Note": "No pending registrations", "registrations": []}), 200
+
         res = []
         for registration, user in pending:
             res.append({
-                'reg_id': registration.reg_id,
-                'user_id': registration.user_id,
+                'reg_id':   registration.reg_id,
+                'user_id':  registration.user_id,
                 'applicant': {
-                    'name': f"{user.first_name} {user.last_name}",
+                    'name':  f"{user.first_name} {user.last_name}",
                     'email': user.email,
                     'phone': user.phone
                 },
-                'qualifications': registration.qualifications,
-                'specialty': registration.specialty,
-                'document_links': registration.document_links,
+                'qualifications':     registration.qualifications,
+                'specialty':          registration.specialty,
+                'document_links':     registration.document_links,
                 'application_status': registration.application_status,
-                'created_at': registration.created_at.isoformat() if registration.created_at else None,
-                'updated_at': registration.updated_at.isoformat() if registration.updated_at else None
+                'created_at':         registration.created_at.isoformat() if registration.created_at else None,
             })
 
-        return jsonify({'Registrations':res}), 200
+        return jsonify({'Registrations': res}), 200
     except Exception as e:
         print(e)
-        return jsonify({"Error":f"{e}"}), 500
-    
+        return jsonify({"Error": f"{e}"}), 500
+
+
 def get_all_registrations():
-    regs = db.session.query(
-        CoachRegistration, User
-    ).join(
-        User, CoachRegistration.user_id == User.user_id
-    ).order_by(
-        CoachRegistration.created_at.desc()
-    ).all()
+    try:
+        regs = db.session.query(
+            CoachRegistration, User
+        ).join(
+            User, CoachRegistration.user_id == User.user_id
+        ).order_by(
+            CoachRegistration.created_at.desc()
+        ).all()
 
-    res = []
-    for registration, user in regs:
-        res.append({
-            'reg_id': registration.reg_id,
-            'user_id': registration.user_id,
-            'applicant': {
-                'name': f"{user.first_name} {user.last_name}",
-                'email': user.email,
-                'phone': user.phone
-            },
-            'qualifications': registration.qualifications,
-            'specialty': registration.specialty,
-            'document_links': registration.document_links,
-            'application_status': registration.application_status,
-            'created_at': registration.created_at.isoformat() if registration.created_at else None,
-            'updated_at': registration.updated_at.isoformat() if registration.updated_at else None
-        })
+        res = []
+        for registration, user in regs:  # return was inside loop — fixed
+            res.append({
+                'reg_id':   registration.reg_id,
+                'user_id':  registration.user_id,
+                'applicant': {
+                    'name':  f"{user.first_name} {user.last_name}",
+                    'email': user.email,
+                    'phone': user.phone
+                },
+                'qualifications':     registration.qualifications,
+                'specialty':          registration.specialty,
+                'document_links':     registration.document_links,
+                'application_status': registration.application_status,
+                'created_at':         registration.created_at.isoformat() if registration.created_at else None,
+            })
 
-        return jsonify({'Registrations':res}), 200
-    
+        return jsonify({'Registrations': res}), 200
+    except Exception as e:
+        print(e)
+        return jsonify({"Error": f"{e}"}), 500
+
+
 def process_coach_registration(reg_id):
     try:
         admin_id = get_jwt_identity()
-        data = request.json
-        action = data.get('action')
+        data     = request.json or {}
+        action   = data.get('action')
 
-        if action not in ["approved", 'rejected']:
-            return jsonify({"Error":"Not a valid action"}), 400
-        
-        registration = CoachRegistration.query.filter_by(reg_id = reg_id, application_status='pending').first()
+        if action not in ['approved', 'rejected']:
+            return jsonify({"Error": "Not a valid action. Use 'approved' or 'rejected'"}), 400
+
+        registration = CoachRegistration.query.filter_by(
+            reg_id=reg_id, application_status='pending'
+        ).first()
         if not registration:
-            return jsonify({"Error":"No registration found"}), 404
-        
-        registration.status = action
-        if action == "approved":
-            registration.application_status = 'approved'
-            registration.reviewed_by = admin_id
+            return jsonify({"Error": "No pending registration found"}), 404
 
-            existing_check = Coach.query.filter_by(user_id = registration.user_id).first()
-            if existing_check:
-                return jsonify({"Error":"This coach already exists"}), 400
-            
-            new_coach = Coach(
-                user_id=registration.user_id,
-                certifications=registration.qualifications,
-                cost=data.get('cost', 0.00),
-                status='active'
-            )
-            db.session.add(new_coach) 
+        registration.application_status = action
+        registration.reviewed_by        = admin_id
 
+        if action == 'approved':
+            # Flip user role
             user = User.query.get(registration.user_id)
-            user.role = 'coach'
+            if user:
+                user.role = 'coach'
+
+            # Create Coaches row if doesn't exist
+            existing_coach = Coach.query.filter_by(user_id=registration.user_id).first()
+            if existing_coach:
+                existing_coach.status     = 'approved'
+                existing_coach.verified_at = datetime.utcnow()
+            else:
+                new_coach = Coach(
+                    user_id        = registration.user_id,
+                    specialization = registration.specialty or 'fitness',
+                    certifications = registration.qualifications,
+                    cost           = data.get('cost', 0.00),
+                    status         = 'approved',
+                    verified_at    = datetime.utcnow()
+                )
+                db.session.add(new_coach)
 
             notif = Notification(
                 user_id = registration.user_id,
-                title = 'Coach Application approved',
-                message = f'Your application has been approved at {datetime.utcnow}',
-                type = 'request_accepted'
+                title   = 'Coach Application Approved',
+                message = f'Your application has been approved on {datetime.utcnow().strftime("%Y-%m-%d")}.',
+                type    = 'request_accepted'
             )
             db.session.add(notif)
             db.session.commit()
+
             return jsonify({
-                "Success":"Registration approved",
-                "Registration": {
-                    'reg_id': registration.reg_id,
-                    'user_id': registration.user_id,
-                    'application_status': registration.application_status,
-                    'reviewd_by': registration.reviewed_by
-                }
+                "Success": "Registration approved",
+                "reg_id":  registration.reg_id,
+                "user_id": registration.user_id,
             }), 200
-        elif action == "reject":
+
+        elif action == 'rejected':
             reject_reason = data.get('rejection_reason')
             if not reject_reason:
-                return jsonify({"Error":"Reason is required"}), 400
-            
-            registration.application_status = 'rejected'
-            registration.rejected_reason = reject_reason
-            registration.reviewed_by = admin_id
+                return jsonify({"Error": "rejection_reason is required"}), 400
+
+            registration.rejection_reason = reject_reason
 
             notif = Notification(
                 user_id = registration.user_id,
-                title = "Coach application declined",
-                message = f"Your application has been denied. Reason {reject_reason}",
-                type='request_declined'
+                title   = 'Coach Application Declined',
+                message = f'Your application has been denied. Reason: {reject_reason}',
+                type    = 'request_declined'
             )
             db.session.add(notif)
             db.session.commit()
 
             return jsonify({
-                    'message': 'Registration rejected',
-                    'registration': {
-                        'reg_id': registration.reg_id,
-                        'user_id': registration.user_id,
-                        'application_status': registration.application_status,
-                        'rejection_reason': registration.rejection_reason,
-                        'reviewed_by': registration.reviewed_by
-                    }
-                }), 200
+                "message":          "Registration rejected",
+                "reg_id":           registration.reg_id,
+                "rejection_reason": registration.rejection_reason,
+            }), 200
+
     except Exception as e:
         db.session.rollback()
         print(e)
-        return jsonify({"Failed":"Could not proccess for registration"}), 500
+        return jsonify({"Failed": f"{e}"}), 500

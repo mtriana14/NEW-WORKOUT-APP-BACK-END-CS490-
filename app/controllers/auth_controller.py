@@ -157,6 +157,34 @@ def update_user(): # small modification: user_id is now taken from the JWT token
              conn.close()
 
 @jwt_required()
+def get_me():
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    return jsonify({
+        'user': {
+            'id':            user.user_id,
+            'userId':        user.user_id,
+            'firstName':     user.first_name,
+            'lastName':      user.last_name,
+            'name':          f"{user.first_name} {user.last_name}",
+            'email':         user.email,
+            'role':          user.role,
+            'username':      user.username,
+            'phone':         user.phone,
+            'weight':        float(user.weight) if user.weight else None,
+            'height':        float(user.height) if user.height else None,
+            'date_of_birth': user.date_of_birth.isoformat() if user.date_of_birth else None,
+            'gender':        user.gender,
+            'profile_photo': user.profile_photo,
+            'is_active':     user.is_active,
+            'last_login':    user.last_login.isoformat() if user.last_login else None,
+            'created_at':    user.created_at.isoformat() if user.created_at else None,
+        },
+        'profile': {}
+    }), 200
 def delete_user():
     try:
         user_id = get_jwt_identity()

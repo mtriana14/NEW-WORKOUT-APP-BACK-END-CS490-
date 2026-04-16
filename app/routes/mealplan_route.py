@@ -8,3 +8,4 @@ mealplan_bp.route('/mealplan/delete/<int:mealplan_id>', methods=["DELETE"])(dele
 mealplan_bp.route('/mealplan/update/<int:mealplan_id>', methods=["PATCH"])(update_mealplan)
 mealplan_bp.route('/mealplan/getone/<int:mealplan_id>', methods=["GET"])(get_one_mealplan)
 mealplan_bp.route('/mealplan/getall', methods = ["GET"])(get_all_mealplans)
+mealplan_bp.route('/mealplans/my-plans', methods=['GET'])(get_all_mealplans)
