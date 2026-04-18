@@ -1,16 +1,23 @@
+'''
+DEPRECEATED DO NOT USE
+USE coach_registration_controller2.py
+CHECK CHANGES IN coach_registration_routes.py ASWELL
+'''
+
+
 from flask import request, jsonify
 from app.config.db import db
 from app.models.coach import Coach
 from app.models.user import User
+from app.models.coach_registration import CoachRegistration
 from app.models.notification import Notification
 from datetime import datetime
 
 def get_pending_coaches():
     """Get all coaches pending admin review."""
-    pending_coaches = Coach.query.filter_by(status='pending').all()
+    pending_coaches = CoachRegistration.query.filter_by(status='pending').all()
     result = [
         {
-            'id': coach.coach_id,
             'user_id': coach.user_id,
             'name': coach.user.name,
             'email': coach.user.email,
@@ -57,7 +64,7 @@ def get_all_coaches():
     coaches = Coach.query.all()
     result = [
         {
-            'id': coach.coach_id,
+            'id': coach.id,
             'user_id': coach.user_id,
             'name': coach.user.name,
             'email': coach.user.email,

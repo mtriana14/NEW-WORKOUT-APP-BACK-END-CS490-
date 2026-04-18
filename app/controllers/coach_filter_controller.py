@@ -23,7 +23,6 @@ def get_subscribed_coach():
         print(e)
         return jsonify({"Failed":f"{e}"}), 500
     
-# STILL WORKING ON THIS DO NOT USE YET
 def search_for_coaches():
     try:
         first_name = request.args.get('first_name')
