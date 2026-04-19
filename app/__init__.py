@@ -74,6 +74,8 @@ def create_app():
     app.register_blueprint(coach_dashboard_bp, url_prefix='/api')
     from app.routes.workoutPlanRoutes import workout_plan_bp
     app.register_blueprint(workout_plan_bp, url_prefix = '/api')
+    from app.routes.oauth_routes import oauth_bp
+    app.register_blueprint(oauth_bp, url_prefix='/api')
 
 
 
