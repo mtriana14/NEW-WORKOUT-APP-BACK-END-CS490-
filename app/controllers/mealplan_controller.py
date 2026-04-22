@@ -25,7 +25,7 @@ def create_mealplan():
 
         db.session.add(mealplan)
         db.session.commit()
-        return jsonify({"Success":"Mealplan created", "Description":f"{data.get("description")}"}), 200
+        return jsonify({"Success":"Mealplan created", "Description":f"{data.get('description')}"}), 200
 
     except Exception as e:
         db.session.rollback()
