@@ -15,13 +15,13 @@ def create_checkin():
             return jsonify({"Error":"Invalid date"}), 400
         
         checkin = Check_in(
-            user_id=user_id,
-            checkin_date=checkin_date,
-            mood=data.get('mood'),
-            energy_level=data.get('energy_level'),
-            hours_of_sleep=data.get('hours_of_sleep'),
-            soreness=data.get('soreness'),
-            notes=data.get('notes')
+            user_id = user_id,
+            checkin_date = checkin_date,
+            mood = data.get('mood'),
+            energy_level = data.get('energy_level'),
+            hours_of_sleep = data.get('hours_of_sleep'),
+            soreness = data.get('soreness'),
+            notes = data.get('notes')
         )
 
         db.session.add(checkin)
