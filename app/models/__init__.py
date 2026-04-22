@@ -12,3 +12,5 @@ from .coach_management import CoachManagement
 from .hire import Hire
 from .review import Review
 from .activity_log import ActivityLog
+from .workout_calendar import WorkoutCalendar
+from .workout_exercise import WorkoutExercise

@@ -76,6 +76,10 @@ def create_app():
     app.register_blueprint(workout_plan_bp, url_prefix = '/api')
     from app.routes.oauth_routes import oauth_bp
     app.register_blueprint(oauth_bp, url_prefix='/api')
+    from app.routes.forgot_pass_routes import forgot_pass_bp
+    app.register_blueprint(forgot_pass_bp, url_prefix='/api')
+    from app.routes.workout_calendar_routes import workout_calendar_bp
+    app.register_blueprint(workout_calendar_bp, url_prefix='/api')
 
 
 
