@@ -80,7 +80,8 @@ def create_app():
     app.register_blueprint(forgot_pass_bp, url_prefix='/api')
     from app.routes.workout_calendar_routes import workout_calendar_bp
     app.register_blueprint(workout_calendar_bp, url_prefix='/api')
-
+    from app.routes.admin_users_routes import admin_users_bp
+    app.register_blueprint(admin_users_bp, url_prefix='/api')
 
 
     
