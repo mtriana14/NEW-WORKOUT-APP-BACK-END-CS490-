@@ -19,7 +19,7 @@ def create_app():
     app.config['DB_NAME'] = os.getenv('DB_NAME')
     app.config['DB_PORT'] = os.getenv('DB_PORT', '3305')
 
-    CORS(app)
+    CORS(app, origins=['http://localhost:3000', 'https://workout-webapp-frontend-production.up.railway.app'], supports_credentials=True)
     JWTManager(app)
     init_db(app)
 
