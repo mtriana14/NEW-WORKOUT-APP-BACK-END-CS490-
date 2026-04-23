@@ -18,8 +18,7 @@ def test_create_mealplan(client):
     headers={"Authorization": f"Bearer {token}"})
     assert resp.status_code == 201
 
-'''
-def test_update_mealplan(client):
+def test_invalid_mealplan(client):
     resp = client.post('/api/auth/register', json=create_user(1))
     assert resp.status_code == 201
     resp = client.post('/api/auth/login', json={
@@ -28,7 +27,35 @@ def test_update_mealplan(client):
     })
     assert resp.status_code == 200
     token = resp.json['token']
-    resp = client.patch('/api/mealplan/update/1'
-        json={}
+    resp = client.post('api/mealplan/create', json= {
+        "user_id":1,
+        "description":"stuff",
+        "status":"active"
+    },
+    headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 400
+
+def test_update_mealplan(client):
+    resp = client.post('/api/auth/register', json=create_user(1))
+    assert resp.status_code == 201
+    resp = client.post('/api/auth/login', json={
+        "email": "john@example.com",
+        "password": "password"
+    })
+    assert resp.status_code == 200
+    print(resp.json['user']['id'])
+    token = resp.json['token']
+    resp = client.post('api/mealplan/create', json= {
+        "user_id":1,
+        "name":"diet",
+        "description":"stuff",
+        "status":"active"
+    },
+    headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 201
+
+    resp = client.patch('/api/mealplan/update/1',
+        json={"description":"Some update"},
+        headers={"Authorization": f"Bearer {token}"}
     )
-'''
+    assert resp.status_code == 200

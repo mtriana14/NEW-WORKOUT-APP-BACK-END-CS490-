@@ -14,6 +14,9 @@ def create_mealplan():
         data = request.json
         if not data:
             return jsonify({"Error":"No body"}), 400
+
+        if "name" not in data:
+            return jsonify({"Failed":"Missing data"}), 400
         
         mealplan = MealPlan (
             user_id = user_id,
