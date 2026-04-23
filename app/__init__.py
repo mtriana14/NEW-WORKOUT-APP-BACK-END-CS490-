@@ -82,7 +82,8 @@ def create_app():
     app.register_blueprint(workout_calendar_bp, url_prefix='/api')
     from app.routes.admin_users_routes import admin_users_bp
     app.register_blueprint(admin_users_bp, url_prefix='/api')
-
+    from app.routes.billing_history_routes import billing_history_bp
+    app.register_blueprint(billing_history_bp, url_prefix='/api')
 
     
     @app.route('/')
