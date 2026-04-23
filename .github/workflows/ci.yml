@@ -117,7 +117,7 @@ jobs:
           from app.controllers.mealplan_controller import create_mealplan, get_all_mealplans
           from app.controllers.notification_controller import get_user_notifications, mark_as_read
           from app.controllers.oauth_controller import google_sign_in
-          from app.controllers.password_reset_controller import forgot_password, reset_password
+          from app.controllers.password_reset_controller import forgot_password_reset, reset_password
           from app.controllers.payment_dashboard_controller import get_payment_summary
           from app.controllers.pfp_controller import upload_pfp
           from app.controllers.review_controller import leave_review, get_coach_reviews
