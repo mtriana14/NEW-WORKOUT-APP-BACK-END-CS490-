@@ -84,7 +84,8 @@ def create_app():
     app.register_blueprint(admin_users_bp, url_prefix='/api')
     from app.routes.billing_history_routes import billing_history_bp
     app.register_blueprint(billing_history_bp, url_prefix='/api')
-
+    from app.routes.activity_aggregate_routes import activity_aggregate_bp
+    app.register_blueprint(activity_aggregate_bp, url_prefix='/api')
     
     @app.route('/')
     def index():
