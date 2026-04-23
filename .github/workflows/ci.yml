@@ -94,46 +94,4 @@ jobs:
           print('All controllers imported successfully')
           "
 
-      - name: Check all controllers import cleanly
-        env:
-          SECRET_KEY: ci-secret-key
-          JWT_SECRET_KEY: ci-jwt-secret
-          DB_HOST: localhost
-          DB_USER: root
-          DB_PASSWORD: password
-          DB_NAME: herahealth_test
-          DB_PORT: 3306
-          GOOGLE_CLIENT_ID: ci-google-client-id
-          UPLOAD_FOLDER: static/uploads/profile_photos
-        run: |
-          python -c "
-          from app.controllers.auth_controller import register, login, logout
-          from app.controllers.activity_log_controller import log_strength, log_cardio, log_steps_calories
-          from app.controllers.billing_controller import get_saved_cards, pay_with_saved_card
-          from app.controllers.client_request_controller import send_request, respond_to_request
-          from app.controllers.coach_apply_controller import apply_as_coach, get_my_application
-          from app.controllers.coach_availability_controller import set_availability, get_availability
-          from app.controllers.coach_dashboard_controller import get_coach_dashboard
-          from app.controllers.coach_filter_controller import get_subscribed_coach, search_for_coaches
-          from app.controllers.coach_management_controller import suspend_coach, reactivate_coach, disable_coach
-          from app.controllers.coach_registration_controller2 import get_pending_registrations, get_all_registrations, process_coach_registration
-          from app.controllers.dismiss_coach_controller import dismiss_coach
-          from app.controllers.exercise_controller import get_all_exercises, create_exercise
-          from app.controllers.fitnessgoal_controller import create_fitnessgoal, get_all_fitnessgoals
-          from app.controllers.mealplan_controller import create_mealplan, get_all_mealplans
-          from app.controllers.notification_controller import get_user_notifications, mark_as_read
-          from app.controllers.oauth_controller import google_sign_in
-          from app.controllers.password_reset_controller import forgot_password_reset, reset_password
-          from app.controllers.payment_dashboard_controller import get_payment_summary
-          from app.controllers.pfp_controller import upload_pfp
-          from app.controllers.review_controller import leave_review, get_coach_reviews
-          from app.controllers.subscription_controller import subscribe_to_coach
-          from app.controllers.survey_controller import create_checkin
-          from app.controllers.workout_calendar_controller import get_my_weekly_calendar, assign_plan_to_date
-          from app.controllers.workoutplans_controller import get_all_coach_workout_plans, create_workout_plan
-          from app.controllers.activity_aggregate_controller import get_my_aggregates
-          from app.controllers.billing_history_controller import get_my_invoices, get_coach_revenue
-          from app.controllers.account_status_controller import deactivate_my_account, reactivate_account
-          from app.controllers.admin_users_controller import get_all_users, update_user_status
-          print('All controllers imported successfully')
-          "
+   
