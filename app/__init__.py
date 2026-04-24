@@ -24,7 +24,7 @@ def create_app():
     init_db(app)
 
     with app.app_context():
-        from app.models import User, Coach, CoachAvailability, ClientRequest, Exercise, Notification, Payment, CoachRegistration, CoachManagement, Hire, Review, ActivityLog
+        from app.models import User, Coach, CoachAvailability, ClientRequest, Exercise, Notification, Payment, CoachRegistration, CoachManagement, Hire, Review, ActivityLog, ProgressPhoto
 
     from app.routes.auth_routes import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/api')
@@ -87,8 +87,14 @@ def create_app():
     from app.routes.activity_aggregate_routes import activity_aggregate_bp
     app.register_blueprint(activity_aggregate_bp, url_prefix='/api')
     from app.routes.client_routes import client_bp
-    app.register_blueprint(client_bp, url_prefix='/api')    
-    
+    app.register_blueprint(client_bp, url_prefix='/api')
+    from app.routes.admin_reports_routes import admin_reports_bp
+    app.register_blueprint(admin_reports_bp, url_prefix='/api')
+    from app.routes.progress_photo_routes import progress_photo_bp
+    app.register_blueprint(progress_photo_bp, url_prefix='/api')
+    from app.routes.account_status_routes import account_status_bp
+    app.register_blueprint(account_status_bp, url_prefix='/api')
+
     @app.route('/')
     def index():
         return {'message': 'Fitness App API is running'}
