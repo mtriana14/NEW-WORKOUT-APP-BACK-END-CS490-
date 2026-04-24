@@ -101,4 +101,3 @@ def test_delete_mealplan(client):
     resp = client.get('/api/getone/1', headers={"Authorization": f"Bearer {token}"})
     assert resp.status_code == 404
     
-    
