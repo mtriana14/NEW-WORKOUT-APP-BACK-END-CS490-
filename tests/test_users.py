@@ -1,4 +1,5 @@
-from pre_builts import create_user
+from tests.pre_builts import create_user
+from tests.pre_builts import register_and_login
 
 def test_create_user_success(client):
     response = client.post('/api/auth/register', json={
@@ -68,6 +69,11 @@ def test_failed_login(client):
     })
     assert resp.status_code == 401
 
+def test_logout(client):
+    token = register_and_login(client, 1)
+    resp = client.post('/api/auth/logout', headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200
+    
 def test_update_user(client):
     resp = client.post('/api/auth/register', json=create_user(1))
     assert resp.status_code == 201
@@ -77,12 +83,10 @@ def test_update_user(client):
     })
     assert resp.status_code == 200 
     token = resp.json['token']
-    print(token)
     resp = client.patch('/api/auth/update', 
         json={"height": 57},
         headers={"Authorization": f"Bearer {token}"}
     )
-    print(resp.status_code)
     assert resp.status_code == 200
 
 
