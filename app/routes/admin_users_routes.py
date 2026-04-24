@@ -10,6 +10,9 @@ admin_users_bp = Blueprint('admin_users', __name__)
 admin_users_bp.route('/admin/users', methods=['GET'])(
     admin_required(get_all_users)
 )
+admin_users_bp.route('/users', methods=['GET'], endpoint='get_all_users_alias')(
+    admin_required(get_all_users)
+)
 admin_users_bp.route('/admin/users/<int:user_id>/status', methods=['PUT'])(
     admin_required(update_user_status)
 )
