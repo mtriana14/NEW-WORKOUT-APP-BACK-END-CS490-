@@ -86,6 +86,13 @@ def get_pending_requests(coach_id):
 
     return jsonify({'requests': result}), 200
 
+# gets all the requests that a coach has/had from the hire table
+def get_all_reqs(coach_id):
+    coach = Coach.query.filter_by(coach_id = coach_id).first()
+    if not coach:
+        return jsonify({"Failed":"No coach found"}), 404
+    reqs = Hire.query.filter_by(coach_id=coach_id).all()
+    return jsonify(reqs.to_dict()), 200
 
 def respond_to_request(request_id):
     """Accept or decline a client request."""
