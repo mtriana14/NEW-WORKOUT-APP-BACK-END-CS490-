@@ -112,6 +112,7 @@ def get_all_mealplans():
         print(e)
         return jsonify({"Failed":f"Details: {e}"}), 500
     
+'''
 def _plan_with_days(plan):
     """Helper — returns a meal plan dict with food items grouped by day."""
     coach      = Coach.query.get(plan.coach_id) if plan.coach_id else None
@@ -155,7 +156,7 @@ def _plan_with_days(plan):
         'created_at':   plan.created_at.isoformat() if plan.created_at else None,
         'updated_at':   plan.updated_at.isoformat() if plan.updated_at else None,
     }
-
+'''
 
 @jwt_required()
 def add_food_item(mealplan_id):
