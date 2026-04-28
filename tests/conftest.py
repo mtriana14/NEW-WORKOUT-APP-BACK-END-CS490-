@@ -1,13 +1,15 @@
 import pytest
+import os
 from app import create_app
 from app.config.db import db
 from tests.pre_builts import create_user
 
 @pytest.fixture
 def app():
+    os.environ['DB_NAME'] = 'test_db'
     app = create_app()
     app.config['TESTING'] = True
-    app.config['DB_NAME'] = 'test_db'
+    app.config['PROPAGATE_EXCEPTIONS'] = False
 
     with app.app_context():
         yield app

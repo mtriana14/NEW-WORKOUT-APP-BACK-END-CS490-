@@ -57,7 +57,8 @@ def test_create_exercise_success(client):
         headers={'Authorization': f'Bearer {token}'}
     )
     assert resp.status_code == 201
-    assert 'id' in resp.json or 'exercise_id' in resp.json
+    assert 'exercise' in resp.json
+    assert 'e_id' in resp.json['exercise']
 
 
 def test_create_exercise_missing_name(client):

@@ -106,12 +106,21 @@ def update_mealplan(mealplan_id, user_id=None):
         editable  = [field for field in all_cols if field not in non_edits]
         updates   = {key: data[key] for key in editable if key in data}
  
+        if not updates:
+            return jsonify({'error': 'No valid fields to update'}), 400
+ 
         for key, value in updates.items():
             setattr(mealplan, key, value)
  
         mealplan.updated_at = datetime.utcnow()
         db.session.commit()
-        return jsonify({"Success": f"Mealplan {mealplan_id} has been updated"}), 200
+        return jsonify({
+            'meal_plan_id': mealplan.meal_plan_id,
+            'name': mealplan.name,
+            'description': mealplan.description,
+            'status': mealplan.status,
+            'updated_at': mealplan.updated_at.isoformat() if mealplan.updated_at else None,
+        }), 200
  
     except Exception as e:
         db.session.rollback()
