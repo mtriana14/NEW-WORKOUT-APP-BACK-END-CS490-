@@ -7,7 +7,7 @@ def get_all_exercises():
     exercises = Exercise.query.filter_by(is_active=True).all()
     result = [
         {
-            'id': ex.id,
+            'id': ex.e_id,
             'name': ex.name,
             'description': ex.description,
             'muscle_group': ex.muscle_group,
