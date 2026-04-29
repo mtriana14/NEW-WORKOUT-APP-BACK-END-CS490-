@@ -83,6 +83,33 @@ def disable_coach(coach_id):
     return jsonify({'message': 'Coach account disabled successfully'}), 200
  
  
+def get_coach_detail(coach_id):
+    """GET /api/admin/coaches/<coach_id>"""
+    coach = Coach.query.filter_by(coach_id=coach_id).first()
+    if not coach:
+        return jsonify({'error': 'Coach not found'}), 404
+
+    user = User.query.filter_by(user_id=coach.user_id).first()
+
+    return jsonify({
+        'coach': {
+            'coach_id': coach.coach_id,
+            'user_id': coach.user_id,
+            'name': f'{user.first_name} {user.last_name}' if user else 'Unknown',
+            'email': user.email if user else None,
+            'specialization': coach.specialization,
+            'certifications': coach.certifications,
+            'experience_years': coach.experience_years,
+            'bio': coach.bio,
+            'hourly_rate': float(coach.hourly_rate) if coach.hourly_rate else None,
+            'cost': float(coach.cost) if coach.cost else None,
+            'status': coach.status,
+            'verified_at': coach.verified_at.isoformat() if coach.verified_at else None,
+            'created_at': coach.created_at.isoformat() if coach.created_at else None,
+        }
+    }), 200
+
+
 def update_coach_status(coach_id):
     """
     PUT /api/admin/coaches/<coach_id>/status

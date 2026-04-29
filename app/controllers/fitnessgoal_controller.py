@@ -23,7 +23,7 @@ def create_fitnessgoal():
 
         db.session.add(newgoal)
         db.session.commit()
-        return jsonify({"Success":"New fitness goal for %s created".format(user_id)}), 201
+        return jsonify(newgoal.to_dict()), 201
     except Exception as e:
         db.session.rollback()
         print(e)
@@ -65,10 +65,12 @@ def get_all_fitnessgoals():
         user_id = get_jwt_identity()
         query = FitnessGoal.query.filter_by(user_id = user_id)
         goals = query.order_by(FitnessGoal.created_at.desc()).all()
+        if not goals:
+            return jsonify({"Error":"No fitnessgoals"}), 404
         return jsonify({"Goals":[goal.to_dict() for goal in goals]}), 200
     except Exception as e:
         print(e)
-        return jsonify({"Failed":f"{e}"})
+        return jsonify({"Failed":f"{e}"}), 500
     
 @jwt_required()
 def edit_fitnessgoal(goal_id):

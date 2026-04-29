@@ -15,36 +15,40 @@ def create_mealplan(user_id=None):
         data = request.json
         if not data:
             return jsonify({"Error": "No body"}), 400
- 
-        # Look up coach from JWT so coach_id is always set correctly
-        coach = Coach.query.filter_by(user_id=jwt_user_id).first()
-        if not coach:
-            return jsonify({"Error": "Coach not found"}), 404
- 
-        client_id = data.get("client_id")
-        if not client_id:
-            return jsonify({"Error": "client_id is required"}), 400
- 
+
         name = data.get("name")
         if not name:
             return jsonify({"Error": "name is required"}), 400
- 
+
+        # Check if caller is a coach
+        coach = Coach.query.filter_by(user_id=jwt_user_id).first()
+
+        if coach:
+            # Coach creating plan for a client
+            client_id = data.get("client_id")
+            if not client_id:
+                return jsonify({"Error": "client_id is required for coaches"}), 400
+            plan_user_id = client_id
+            plan_coach_id = coach.coach_id
+        else:
+            # Client creating their own plan
+            plan_user_id = jwt_user_id
+            plan_coach_id = None
+
         mealplan = MealPlan(
-            user_id=client_id,
-            coach_id=coach.coach_id,
+            user_id=plan_user_id,
+            coach_id=plan_coach_id,
             name=name,
             description=data.get("description", ""),
             status=data.get("status", "active")
         )
- 
         db.session.add(mealplan)
         db.session.commit()
         return jsonify({
             "Success": "Mealplan created",
-            "meal_plan_id": mealplan.meal_plan_id,
-            "Description": data.get("description")
+            "meal_plan_id": mealplan.meal_plan_id
         }), 201
- 
+
     except Exception as e:
         db.session.rollback()
         print(e)
@@ -102,12 +106,21 @@ def update_mealplan(mealplan_id, user_id=None):
         editable  = [field for field in all_cols if field not in non_edits]
         updates   = {key: data[key] for key in editable if key in data}
  
+        if not updates:
+            return jsonify({'error': 'No valid fields to update'}), 400
+ 
         for key, value in updates.items():
             setattr(mealplan, key, value)
  
         mealplan.updated_at = datetime.utcnow()
         db.session.commit()
-        return jsonify({"Success": f"Mealplan {mealplan_id} has been updated"}), 200
+        return jsonify({
+            'meal_plan_id': mealplan.meal_plan_id,
+            'name': mealplan.name,
+            'description': mealplan.description,
+            'status': mealplan.status,
+            'updated_at': mealplan.updated_at.isoformat() if mealplan.updated_at else None,
+        }), 200
  
     except Exception as e:
         db.session.rollback()
