@@ -103,13 +103,8 @@ def create_app():
     app.register_blueprint(progress_photo_bp, url_prefix='/api')
     from app.routes.account_status_routes import account_status_bp
     app.register_blueprint(account_status_bp, url_prefix='/api')
-<<<<<<< HEAD
-    from app.routes.progress_routes import progress_bp
-    app.register_blueprint(progress_bp, url_prefix='/api')
-=======
     from app.routes.chat_routes import chat_bp
     app.register_blueprint(chat_bp, url_prefix='/api')
->>>>>>> feature/chat
 
     @app.route('/')
     def index():
