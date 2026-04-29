@@ -4,8 +4,10 @@ from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
 from .config.db import init_db
 import os
+from flask_socketio import SocketIO
 
 load_dotenv()
+socketio = SocketIO()
 
 def create_app():
     app = Flask(__name__)
@@ -22,6 +24,13 @@ def create_app():
     CORS(app, origins=['http://localhost:3000', 'https://workout-webapp-frontend-production.up.railway.app'], supports_credentials=True)
     JWTManager(app)
     init_db(app)
+    socketio.init_app(app, 
+    async_mode='eventlet',
+    cors_allowed_origins=[
+        'http://localhost:3000',
+        'https://workout-webapp-frontend-production.up.railway.app'
+    ]
+)
 
     with app.app_context():
         from app.models import User, Coach, CoachAvailability, ClientRequest, Exercise, Notification, Payment, CoachRegistration, CoachManagement, Hire, Review, ActivityLog, ProgressPhoto
@@ -94,6 +103,8 @@ def create_app():
     app.register_blueprint(progress_photo_bp, url_prefix='/api')
     from app.routes.account_status_routes import account_status_bp
     app.register_blueprint(account_status_bp, url_prefix='/api')
+    from app.routes.chat_routes import chat_bp
+    app.register_blueprint(chat_bp, url_prefix='/api')
 
     @app.route('/')
     def index():
