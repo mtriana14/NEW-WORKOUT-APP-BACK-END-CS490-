@@ -15,3 +15,4 @@ from .activity_log import ActivityLog
 from .workout_calendar import WorkoutCalendar
 from .workout_exercise import WorkoutExercise
 from .progress_photo import ProgressPhoto
+from .progress_entry import ProgressEntry

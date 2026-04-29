@@ -3,6 +3,7 @@ from app.config.db import db
 from app.models.payment import Payment
 from app.models.user import User
 from app.models.coach import Coach
+from app.models.notification import Notification
 from sqlalchemy import func
 
 
@@ -80,6 +81,60 @@ def get_all_payments():
         'total':        payments.total,
         'pages':        payments.pages,
         'current_page': payments.page
+    }), 200
+
+
+def get_payment_detail(payment_id):
+    """GET /api/admin/payments/<payment_id>"""
+    payment = Payment.query.filter_by(payment_id=payment_id).first()
+    if not payment:
+        return jsonify({'error': 'Payment not found'}), 404
+
+    client = User.query.filter_by(user_id=payment.client_id).first()
+    coach = Coach.query.filter_by(coach_id=payment.coach_id).first()
+    coach_user = User.query.filter_by(user_id=coach.user_id).first() if coach else None
+
+    return jsonify({
+        'payment': {
+            'payment_id': payment.payment_id,
+            'client_name': f'{client.first_name} {client.last_name}' if client else 'Unknown',
+            'coach_name': f'{coach_user.first_name} {coach_user.last_name}' if coach_user else 'Unknown',
+            'amount': float(payment.amount),
+            'currency': payment.currency,
+            'status': payment.status,
+            'payment_method_type': payment.payment_method_type,
+            'transaction_id': payment.transaction_id,
+            'description': payment.description,
+            'paid_at': payment.paid_at.isoformat() if payment.paid_at else None,
+            'created_at': payment.created_at.isoformat() if payment.created_at else None,
+        }
+    }), 200
+
+
+def refund_payment(payment_id):
+    """POST /api/admin/payments/<payment_id>/refund"""
+    payment = Payment.query.filter_by(payment_id=payment_id).first()
+    if not payment:
+        return jsonify({'error': 'Payment not found'}), 404
+
+    if payment.status == 'refunded':
+        return jsonify({'error': 'Payment has already been refunded'}), 400
+
+    payment.status = 'refunded'
+
+    notification = Notification(
+        user_id=payment.client_id,
+        title='Payment Refunded',
+        message=f'Your payment of ${float(payment.amount):.2f} has been refunded.',
+        type='payment'
+    )
+    db.session.add(notification)
+    db.session.commit()
+
+    return jsonify({
+        'message': 'Payment refunded successfully',
+        'payment_id': payment.payment_id,
+        'new_status': payment.status,
     }), 200
 
 

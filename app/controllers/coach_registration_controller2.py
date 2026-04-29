@@ -49,35 +49,38 @@ def get_pending_registrations():
 
 
 def get_all_registrations():
-    regs = db.session.query(
-        CoachRegistration, User
-    ).join(
-        User, CoachRegistration.user_id == User.user_id
-    ).order_by(
-        CoachRegistration.created_at.desc()
-    ).all()
+    try:
+        regs = db.session.query(
+            CoachRegistration, User
+        ).join(
+            User, CoachRegistration.user_id == User.user_id
+        ).order_by(
+            CoachRegistration.created_at.desc()
+        ).all()
 
-    res = []
-    for registration, user in regs:
-        res.append({
-            'reg_id': registration.reg_id,
-            'user_id': registration.user_id,
-            'applicant': {
-                'name': f"{user.first_name} {user.last_name}",
-                'email': user.email,
-                'phone': user.phone
-            },
-            'qualifications': registration.qualifications,
-            'specialty': registration.specialty,
-            'document_links': registration.document_links,
-            'application_status': registration.application_status,
-            'created_at': registration.created_at.isoformat() if registration.created_at else None,
-            'updated_at': registration.updated_at.isoformat() if registration.updated_at else None
-        })
+        res = []
+        for registration, user in regs:
+            res.append({
+                'reg_id': registration.reg_id,
+                'user_id': registration.user_id,
+                'applicant': {
+                    'name': f"{user.first_name} {user.last_name}",
+                    'email': user.email,
+                    'phone': user.phone
+                },
+                'qualifications': registration.qualifications,
+                'specialty': registration.specialty,
+                'document_links': registration.document_links,
+                'application_status': registration.application_status,
+                'created_at': registration.created_at.isoformat() if registration.created_at else None,
+                'updated_at': registration.updated_at.isoformat() if registration.updated_at else None
+            })
 
-    return jsonify({'Registrations': res}), 200  # fixed: outside loop
-
-
+        return jsonify({'Registrations': res}), 200
+    except Exception as e:
+        print(e)
+        return jsonify({'error': str(e)}), 500
+    
 def process_coach_registration(reg_id):
     try:
         admin_id = get_jwt_identity()
