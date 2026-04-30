@@ -8,7 +8,7 @@ on:
 
 jobs:
   ci:
-    name: Syntax & Import Check
+    name: Syntax, Import & Unit Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -51,6 +51,47 @@ jobs:
           fi
           echo "gunicorn found"
 
+      - name: Check all models import cleanly
+        env:
+          SECRET_KEY: ci-secret-key
+          JWT_SECRET_KEY: ci-jwt-secret
+          DB_HOST: localhost
+          DB_USER: root
+          DB_PASSWORD: password
+          DB_NAME: herahealth_test
+          DB_PORT: 3306
+          GOOGLE_CLIENT_ID: ci-google-client-id
+          UPLOAD_FOLDER: static/uploads/profile_photos
+        run: |
+          python -c "
+          from app.models.user import User
+          from app.models.coach import Coach
+          from app.models.coach_availability import CoachAvailability
+          from app.models.client_request import ClientRequest
+          from app.models.exercise import Exercise
+          from app.models.notification import Notification
+          from app.models.subscription import Subscription
+          from app.models.saved_billing import SavedBilling
+          from app.models.payment import Payment
+          from app.models.coach_registration import CoachRegistration
+          from app.models.coach_management import CoachManagement
+          from app.models.hire import Hire
+          from app.models.review import Review
+          from app.models.activity_log import ActivityLog
+          from app.models.workout_calendar import WorkoutCalendar
+          from app.models.workout_exercise import WorkoutExercise
+          from app.models.meal_plan import MealPlan
+          from app.models.MealPlanFood import MealPlanFood
+          from app.models.WorkoutPlan import WorkoutPlan
+          from app.models.fitnessgoals import FitnessGoal
+          from app.models.checkin import Check_in
+          from app.models.progress_photo import ProgressPhoto
+          from app.models.progress_entry import ProgressEntry
+          from app.models.messagelist import MessageList
+          from app.models.message import Message
+          print('All models imported successfully')
+          "
+
       - name: Check all controllers import cleanly
         env:
           SECRET_KEY: ci-secret-key
@@ -75,7 +116,7 @@ jobs:
           from app.controllers.coach_management_controller import suspend_coach, reactivate_coach, disable_coach
           from app.controllers.coach_registration_controller2 import get_pending_registrations, get_all_registrations, process_coach_registration
           from app.controllers.dismiss_coach_controller import dismiss_coach
-          from app.controllers.exercise_controller import get_all_exercises, create_exercise
+          from app.controllers.exercise_controller import get_all_exercises, create_exercise, bulk_create_common_exercises
           from app.controllers.fitnessgoal_controller import create_fitnessgoal, get_all_fitnessgoals
           from app.controllers.mealplan_controller import create_mealplan, get_all_mealplans
           from app.controllers.notification_controller import get_user_notifications, mark_as_read, get_all_notifications
@@ -91,7 +132,24 @@ jobs:
           from app.controllers.activity_aggregate_controller import get_my_aggregates, get_client_aggregates
           from app.controllers.billing_history_controller import get_my_invoices, get_coach_revenue
           from app.controllers.admin_users_controller import get_all_users, update_user_status
+          from app.controllers.chat_controller import get_conversations, get_messages, get_or_create_convo
+          from app.controllers.progress_controller import get_client_progress, save_progress_entry
+          from app.controllers.account_status_controller import deactivate_my_account, reactivate_account
+          from app.controllers.progress_photo_controller import upload_progress_photo, get_my_photos
+          from app.controllers.admin_reports_controller import get_active_user_report
           print('All controllers imported successfully')
           "
 
-   
+      - name: Run unit tests
+        env:
+          SECRET_KEY: ci-secret-key
+          JWT_SECRET_KEY: ci-jwt-secret
+          DB_HOST: localhost
+          DB_USER: root
+          DB_PASSWORD: password
+          DB_NAME: herahealth_test
+          DB_PORT: 3306
+          GOOGLE_CLIENT_ID: ci-google-client-id
+          UPLOAD_FOLDER: static/uploads/profile_photos
+        run: |
+          pytest tests/ -v --tb=short
