@@ -12,6 +12,27 @@ import json
 
 @jwt_required()
 def get_or_create_convo(coach_id):
+    """
+    Get or create a conversation with a coach
+    ---
+    tags:
+      - Messaging & Real-time
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+        description: User ID of the coach to message
+    responses:
+      200:
+        description: Conversation object retrieved or created
+      400:
+        description: Cannot start conversation (self-messaging or non-coach)
+      500:
+        description: Internal server error
+    """
     try:
         user_id = get_jwt_identity()
         coach = Coach.query.filter_by(user_id = coach_id).first()
@@ -35,6 +56,21 @@ def get_or_create_convo(coach_id):
 
 @jwt_required()
 def get_conversations():
+    """
+    Get all conversations for the current user
+    ---
+    tags:
+      - Messaging & Real-time
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: List of conversations
+      404:
+        description: User not found
+      500:
+        description: Internal server error
+    """
     try:
         user_id = get_jwt_identity()
         user = User.query.get(user_id)
@@ -51,6 +87,24 @@ def get_conversations():
 
 @jwt_required()
 def get_messages(conversation_id):
+    """
+    Get messages for a specific conversation
+    ---
+    tags:
+      - Messaging & Real-time
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: conversation_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: List of messages (marks unread as read)
+      404:
+        description: Conversation or messages not found
+    """
     try:
         user_id = get_jwt_identity()
         convo = MessageList.query.filter(

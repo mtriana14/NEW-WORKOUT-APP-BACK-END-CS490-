@@ -1,15 +1,31 @@
 from flask import jsonify, request
-from flask_jwt_extended import get_jwt_identity, create_access_token
+from flask_jwt_extended import get_jwt_identity, create_access_token, jwt_required
 from app.config.db import db
 from app.models.user import User
 from datetime import datetime
 import bcrypt
 
-
+@jwt_required()
 def deactivate_my_account():
     """
-    PATCH /api/users/me/deactivate
-    Marks the caller's account as inactive.
+    Deactivate the caller's account
+    ---
+    tags:
+      - Account Management
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Account deactivated successfully or already inactive
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+            is_active:
+              type: bool
+      404:
+        description: User not found
     """
     user_id = int(get_jwt_identity())
     user = User.query.filter_by(user_id=user_id).first()
@@ -31,8 +47,31 @@ def deactivate_my_account():
 
 def reactivate_account():
     """
-    POST /api/users/reactivate
-    Public endpoint — accepts email + password and reactivates a deactivated account.
+    Reactivate a deactivated account
+    ---
+    tags:
+      - Account Management
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - email
+            - password
+          properties:
+            email:
+              type: string
+            password:
+              type: string
+    responses:
+      200:
+        description: Account reactivated successfully (returns new access token)
+      400:
+        description: Email and password are required
+      401:
+        description: Invalid credentials
     """
     data = request.get_json() or {}
     email = data.get('email')
@@ -90,8 +129,28 @@ def reactivate_account():
     }), 200
 
 
+@jwt_required()
 def get_account_status():
-    """GET /api/users/me/status"""
+    """
+    Get the status of the current user's account
+    ---
+    tags:
+      - Account Management
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Account status retrieved
+        schema:
+          type: object
+          properties:
+            user_id:
+              type: integer
+            is_active:
+              type: boolean
+      404:
+        description: User not found
+    """
     user_id = int(get_jwt_identity())
     user = User.query.filter_by(user_id=user_id).first()
     if not user:
