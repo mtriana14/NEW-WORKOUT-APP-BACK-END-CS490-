@@ -51,7 +51,9 @@ class TestGetAllExercises:
         mock_ex.difficulty = 'intermediate'
         mock_ex.instructions = 'Press up'
         mock_ex.video_url = 'http://example.com'
-        mock_ex.created_at = '2026-01-01'
+        mock_ex.is_active = True
+        mock_ex.created_at = None
+        mock_ex.updated_at = None
         mock_ex_cls.query.filter_by.return_value.all.return_value = [mock_ex]
 
         response = client.get('/api/admin/exercises', headers=auth_headers(client, role='client'))
@@ -84,6 +86,16 @@ class TestCreateExercise:
         mock_ex_cls.query.filter_by.return_value.first.return_value = None
         mock_instance = MagicMock()
         mock_instance.e_id = 1
+        mock_instance.name = 'Bench Press'
+        mock_instance.description = 'Chest exercise'
+        mock_instance.muscle_group = 'chest'
+        mock_instance.equipment_type = 'barbell'
+        mock_instance.difficulty = 'intermediate'
+        mock_instance.instructions = 'Press up'
+        mock_instance.video_url = 'http://example.com'
+        mock_instance.is_active = True
+        mock_instance.created_at = None
+        mock_instance.updated_at = None
         mock_ex_cls.return_value = mock_instance
 
         response = client.post('/api/admin/exercises', json=VALID_EXERCISE, headers=auth_headers(client))
@@ -135,7 +147,19 @@ class TestUpdateExercise:
     @patch('app.controllers.exercise_controller.Exercise')
     def test_update_exercise_success(self, mock_ex_cls, mock_db, client):
         """Admin can update an existing exercise."""
-        mock_ex_cls.query.filter_by.return_value.first.return_value = MagicMock()
+        mock_exercise = MagicMock()
+        mock_exercise.e_id = 1
+        mock_exercise.name = 'Bench Press'
+        mock_exercise.description = 'Chest exercise'
+        mock_exercise.muscle_group = 'chest'
+        mock_exercise.equipment_type = 'barbell'
+        mock_exercise.difficulty = 'intermediate'
+        mock_exercise.instructions = 'Press up'
+        mock_exercise.video_url = 'http://example.com'
+        mock_exercise.is_active = True
+        mock_exercise.created_at = None
+        mock_exercise.updated_at = None
+        mock_ex_cls.query.filter_by.return_value.first.return_value = mock_exercise
 
         response = client.put(
             '/api/admin/exercises/1',
