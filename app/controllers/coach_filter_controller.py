@@ -7,6 +7,28 @@ from flask_jwt_extended import get_jwt_identity
 
 # get what coach the user is subbed to
 def get_subscribed_coach():
+    """
+    Get the details of the coach the user is currently subscribed to
+    ---
+    tags:
+      - Client Subscriptions
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Returns hire details and coach profile
+        schema:
+          type: object
+          properties:
+            hire:
+              type: object
+            coach:
+              type: object
+      404:
+        description: Coach record not found
+      500:
+        description: Internal server error
+    """
     try:
         user_id = get_jwt_identity()
         hire = Hire.query.filter_by(user_id=user_id, status='active').first()
@@ -24,6 +46,32 @@ def get_subscribed_coach():
         return jsonify({"Failed":f"{e}"}), 500
     
 def search_for_coaches():
+    """
+    Search for active/approved coaches by name or specialty
+    ---
+    tags:
+      - Coach Discovery
+    parameters:
+      - in: query
+        name: first_name
+        type: string
+        description: Search by coach's first name
+      - in: query
+        name: last_name
+        type: string
+        description: Search by coach's last name
+      - in: query
+        name: specialty
+        type: string
+        description: Search by coach's specialization
+    responses:
+      200:
+        description: A list of coaches matching the search criteria
+      400:
+        description: Multiple query parameters provided or invalid parameters
+      404:
+        description: No coaches found matching criteria
+    """
     try:
         first_name = request.args.get('first_name')
         last_name = request.args.get('last_name')

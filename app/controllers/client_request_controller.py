@@ -9,6 +9,37 @@ from datetime import datetime
 
 
 def send_request(coach_id):
+    """
+    Client sends a coaching request to a coach
+    ---
+    tags:
+      - Coach Hiring
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "Hi, I'm looking for a weight loss program."
+    responses:
+      201:
+        description: Coaching request sent successfully
+      400:
+        description: Coach not available or missing message
+      404:
+        description: Coach not found
+      409:
+        description: Pending request or active hire already exists
+    """
     """Client sends a coaching request to a coach."""
     user_id = int(get_jwt_identity())
 
@@ -68,6 +99,24 @@ def send_request(coach_id):
 
 
 def get_pending_requests(coach_id):
+    """
+    Get all pending client requests for a coach
+    ---
+    tags:
+      - Coach Hiring
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: List of pending requests
+      404:
+        description: Coach not found
+    """
     """Get all pending client requests for a coach."""
     coach = Coach.query.filter_by(coach_id=coach_id).first()
     if not coach:
@@ -88,6 +137,37 @@ def get_pending_requests(coach_id):
 
 
 def respond_to_request(request_id):
+    """
+    Accept or decline a client request
+    ---
+    tags:
+      - Coach Hiring
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: request_id
+        type: integer
+        required: true
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - action
+          properties:
+            action:
+              type: string
+              enum: [accepted, declined]
+    responses:
+      200:
+        description: Request status updated successfully
+      400:
+        description: Invalid action provided
+      404:
+        description: Request not found or already processed
+    """
     """Accept or decline a client request."""
     data = request.get_json()
     action = data.get('action')  # 'accepted' or 'declined'
