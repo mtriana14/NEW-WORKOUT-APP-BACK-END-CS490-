@@ -68,6 +68,12 @@ def send_request(coach_id):
 
 
 
+def _serialize_dt(value):
+    if value is None:
+        return None
+    return value.isoformat() if hasattr(value, 'isoformat') else str(value)
+
+
 def _request_dict(req):
     """Serialize a ClientRequest with client name included."""
     client = User.query.filter_by(user_id=req.client_id).first()
@@ -79,8 +85,8 @@ def _request_dict(req):
         'coach_id': req.coach_id,
         'message': req.message,
         'status': req.status,
-        'responded_at': req.responded_at.isoformat() if req.responded_at else None,
-        'created_at': req.created_at.isoformat() if req.created_at else None,
+        'responded_at': _serialize_dt(req.responded_at),
+        'created_at': _serialize_dt(req.created_at),
     }
 
 
