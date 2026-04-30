@@ -2,6 +2,7 @@ from flask import request, jsonify
 from app.config.db import db
 from app.models.client_request import ClientRequest
 from app.models.coach import Coach
+from app.models.user import User
 from app.models.hire import Hire
 from app.models.notification import Notification
 from flask_jwt_extended import get_jwt_identity
@@ -67,24 +68,42 @@ def send_request(coach_id):
 
 
 
+def _request_dict(req):
+    """Serialize a ClientRequest with client name included."""
+    client = User.query.filter_by(user_id=req.client_id).first()
+    return {
+        'request_id': req.request_id,
+        'client_id': req.client_id,
+        'client_name': f'{client.first_name} {client.last_name}' if client else None,
+        'client_email': client.email if client else None,
+        'coach_id': req.coach_id,
+        'message': req.message,
+        'status': req.status,
+        'responded_at': req.responded_at.isoformat() if req.responded_at else None,
+        'created_at': req.created_at.isoformat() if req.created_at else None,
+    }
+
+
 def get_pending_requests(coach_id):
-    """Get all pending client requests for a coach."""
-    coach = Coach.query.filter_by(coach_id=coach_id).first()
+    """Get pending client requests for a coach. URL param is user_id."""
+    coach = Coach.query.filter_by(user_id=coach_id).first()
     if not coach:
         return jsonify({'error': 'Coach not found'}), 404
 
-    requests = ClientRequest.query.filter_by(coach_id=coach_id, status='pending').all()
-    result = [
-        {
-            'id': req.request_id,
-            'client_id': req.client_id,
-            'message': req.message,
-            'created_at': str(req.created_at)
-        }
-        for req in requests
-    ]
+    requests = ClientRequest.query.filter_by(coach_id=coach.coach_id, status='pending').all()
+    return jsonify({'requests': [_request_dict(req) for req in requests]}), 200
 
-    return jsonify({'requests': result}), 200
+
+def get_all_requests(coach_id):
+    """Get all client requests (any status) for a coach. URL param is user_id."""
+    coach = Coach.query.filter_by(user_id=coach_id).first()
+    if not coach:
+        return jsonify({'error': 'Coach not found'}), 404
+
+    requests = ClientRequest.query.filter_by(coach_id=coach.coach_id).order_by(
+        ClientRequest.created_at.desc()
+    ).all()
+    return jsonify({'requests': [_request_dict(req) for req in requests]}), 200
 
 
 def respond_to_request(request_id):
