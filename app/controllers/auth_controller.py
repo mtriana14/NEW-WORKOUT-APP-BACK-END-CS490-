@@ -7,7 +7,45 @@ from sqlalchemy.exc import DataError
 import bcrypt
 
 def register():
-    """Register a new user account."""
+    """
+    Register a new user account
+    ---
+    tags:
+      - Authentication
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - first_name
+            - last_name
+            - email
+            - password
+          properties:
+            first_name:
+              type: string
+            last_name:
+              type: string
+            username:
+              type: string
+            email:
+              type: string
+            password:
+              type: string
+            role:
+              type: string
+              enum: [client, coach]
+              default: client
+    responses:
+      201:
+        description: Account created successfully
+      400:
+        description: Missing required fields
+      409:
+        description: Email or username already exists
+    """
     data = request.get_json()
 
     # Validate required fields
@@ -58,7 +96,33 @@ def register():
 
 
 def login():
-    """Login with email and password."""
+    """
+    Login with email and password
+    ---
+    tags:
+      - Authentication
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - email
+            - password
+          properties:
+            email:
+              type: string
+            password:
+              type: string
+    responses:
+      200:
+        description: Login successful
+      400:
+        description: Email and password are required
+      401:
+        description: Invalid email or password
+    """
     data = request.get_json()
 
     if not data.get('email') or not data.get('password'):
@@ -100,7 +164,17 @@ def login():
 
 
 def logout():
-    #Logout the current user
+    """
+    Logout the current user
+    ---
+    tags:
+      - Authentication
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Successfully logged out
+    """
     identity = get_jwt_identity()
     return jsonify({
         'message': f'Successfully logged out'
@@ -108,6 +182,30 @@ def logout():
 
 @jwt_required()
 def update_user(): # small modification: user_id is now taken from the JWT token
+        """
+    Update the current user's profile
+    ---
+    tags:
+      - User Management
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          description: Dynamic fields from the User model
+    responses:
+      200:
+        description: User updated successfully
+      400:
+        description: Invalid fields or data error
+      404:
+        description: User not found
+      500:
+        description: Server error
+    """
         user_id = get_jwt_identity()
         body = request.json
         if not body:
@@ -159,6 +257,32 @@ def update_user(): # small modification: user_id is now taken from the JWT token
 
 @jwt_required()
 def update_coach():
+    """
+    Update coach-specific details
+    ---
+    tags:
+      - User Management
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          description: Dynamic fields from the Coach model
+    responses:
+      200:
+        description: Coach updated successfully
+      400:
+        description: Invalid fields or data error
+      403:
+        description: User is not a coach
+      404:
+        description: Coach record not found
+      500:
+        description: Server error
+    """
     user_id = get_jwt_identity()
     body = request.json
     if not body:
@@ -208,6 +332,21 @@ def update_coach():
 
 @jwt_required()
 def delete_user():
+    """
+    Delete the current user account
+    ---
+    tags:
+      - User Management
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: User deleted successfully
+      404:
+        description: User not found
+      500:
+        description: Server error
+    """
     try:
         user_id = get_jwt_identity()
         user = db.session.get(User, user_id)

@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from .config.db import init_db
 import os
 from flask_socketio import SocketIO
+from flasgger import Swagger
 
 load_dotenv()
 socketio = SocketIO()
@@ -24,16 +25,36 @@ def create_app():
     CORS(app, origins=['http://localhost:3000', 'https://workout-webapp-frontend-production.up.railway.app'], supports_credentials=True)
     JWTManager(app)
     init_db(app)
-    socketio.init_app(app, 
-    async_mode='eventlet',
-    cors_allowed_origins=[
-        'http://localhost:3000',
-        'https://workout-webapp-frontend-production.up.railway.app'
-    ]
-)
+
+    socketio.init_app(app,
+        async_mode='eventlet',
+        cors_allowed_origins=[
+            'http://localhost:3000',
+            'https://workout-webapp-frontend-production.up.railway.app'
+        ]
+    )
+
+    Swagger(app, template={
+        "info": {
+            "title": "Fitness App API",
+            "description": "API documentation for the Fitness App",
+            "version": "1.0.0"
+        },
+        "securityDefinitions": {
+            "Bearer": {
+                "type": "apiKey",
+                "name": "Authorization",
+                "in": "header",
+                "description": "JWT Bearer token. Example: Bearer <token>"
+            }
+        },
+        "security": [
+            {"Bearer": []}
+        ]
+    })
 
     with app.app_context():
-        from app.models import User, Coach, CoachAvailability, ClientRequest, Exercise, Notification, Payment, CoachRegistration, CoachManagement, Hire, Review, ActivityLog, ProgressPhoto, ProgressEntry
+        from app.models import User, Coach, CoachAvailability, ClientRequest, Exercise, Notification, Payment, CoachRegistration, CoachManagement, Hire, Review, ActivityLog, ProgressPhoto
 
     from app.routes.auth_routes import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/api')
@@ -82,7 +103,7 @@ def create_app():
     from app.routes.coach_dashboard_routes import coach_dashboard_bp
     app.register_blueprint(coach_dashboard_bp, url_prefix='/api')
     from app.routes.workoutPlanRoutes import workout_plan_bp
-    app.register_blueprint(workout_plan_bp, url_prefix = '/api')
+    app.register_blueprint(workout_plan_bp, url_prefix='/api')
     from app.routes.oauth_routes import oauth_bp
     app.register_blueprint(oauth_bp, url_prefix='/api')
     from app.routes.forgot_pass_routes import forgot_pass_bp
@@ -105,13 +126,11 @@ def create_app():
     app.register_blueprint(account_status_bp, url_prefix='/api')
     from app.routes.chat_routes import chat_bp
     app.register_blueprint(chat_bp, url_prefix='/api')
-    from app.routes.progress_routes import progress_bp
-    app.register_blueprint(progress_bp, url_prefix='/api')
 
     @app.route('/')
     def index():
         return {'message': 'Fitness App API is running'}
-    
+
     @app.route('/testdb')
     def db_check():
         from .config.db import db
