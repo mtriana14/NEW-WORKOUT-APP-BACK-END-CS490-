@@ -20,9 +20,18 @@ def create_app():
     app.config['DB_USER'] = os.getenv('DB_USER')
     app.config['DB_PASSWORD'] = os.getenv('DB_PASSWORD')
     app.config['DB_NAME'] = os.getenv('DB_NAME')
-    app.config['DB_PORT'] = os.getenv('DB_PORT', '3305')
+    app.config['DB_PORT'] = os.getenv('DB_PORT', '3306')
 
-    CORS(app, origins=['http://localhost:3000', 'https://workout-webapp-frontend-production.up.railway.app'], supports_credentials=True)
+    allowed_origins = [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'https://workout-webapp-frontend-production.up.railway.app',
+    ]
+    extra_origin = os.getenv('CORS_ORIGIN')
+    if extra_origin:
+        allowed_origins.append(extra_origin)
+
+    CORS(app, origins=allowed_origins, supports_credentials=True)
     JWTManager(app)
     init_db(app)
 
@@ -52,6 +61,10 @@ def create_app():
             {"Bearer": []}
         ]
     })
+    socketio.init_app(app,
+        async_mode='eventlet',
+        cors_allowed_origins=allowed_origins,
+    )
 
     with app.app_context():
         from app.models import User, Coach, CoachAvailability, ClientRequest, Exercise, Notification, Payment, CoachRegistration, CoachManagement, Hire, Review, ActivityLog, ProgressPhoto

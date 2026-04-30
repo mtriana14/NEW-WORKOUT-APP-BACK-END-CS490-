@@ -52,7 +52,7 @@ class TestGetAllRegistrations:
             (mock_reg, mock_user)
         ]
 
-        response = client.get('/api/admin/coaches', headers=auth_headers(client))
+        response = client.get('/api/admin/coaches/registrations', headers=auth_headers(client))
         assert response.status_code == 200
         assert 'Registrations' in response.get_json()
 
@@ -61,13 +61,13 @@ class TestGetAllRegistrations:
         """Returns empty list when no registrations exist."""
         mock_db.session.query.return_value.join.return_value.order_by.return_value.all.return_value = []
 
-        response = client.get('/api/admin/coaches', headers=auth_headers(client))
+        response = client.get('/api/admin/coaches/registrations', headers=auth_headers(client))
         assert response.status_code == 200
         assert response.get_json()['Registrations'] == []
 
     def test_get_all_registrations_requires_admin(self, client):
         """Returns 403 for non-admin."""
-        response = client.get('/api/admin/coaches', headers=auth_headers(client, role='coach'))
+        response = client.get('/api/admin/coaches/registrations', headers=auth_headers(client, role='coach'))
         assert response.status_code == 403
 
 
