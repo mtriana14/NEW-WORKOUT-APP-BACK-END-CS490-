@@ -181,8 +181,8 @@ def logout():
     }), 200
 
 @jwt_required()
-def update_user(): # small modification: user_id is now taken from the JWT token
-        """
+def update_user():
+    """
     Update the current user's profile
     ---
     tags:
@@ -206,54 +206,50 @@ def update_user(): # small modification: user_id is now taken from the JWT token
       500:
         description: Server error
     """
-        user_id = get_jwt_identity()
-        body = request.json
-        if not body:
-            return jsonify({"Failed":"No body"}), 400
-        fields = [col.name for col in User.__table__.columns]
-        updates= {key: body[key] for key in fields if key in body}
-        if len(body) != len(updates):
-            return jsonify({"Failed":"Invalid fields present", "Fields":fields}), 400
-        
-        if 'password' in updates:
-            hashed = bcrypt.hashpw(updates['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-            updates['password'] = hashed
-            
-        query = ", ".join([f"{key} = %s" for key in updates])
-        values = list(updates.values())
-        
-        conn = db.engine.raw_connection()
-        cursor = None
-        try:
-            cursor = conn.cursor()
+    user_id = get_jwt_identity()
+    body = request.json
+    if not body:
+        return jsonify({"Failed":"No body"}), 400
+    fields = [col.name for col in User.__table__.columns]
+    updates = {key: body[key] for key in fields if key in body}
+    if len(body) != len(updates):
+        return jsonify({"Failed":"Invalid fields present", "Fields":fields}), 400
 
-            cursor.execute("""
-                SELECT user_id FROM Users WHERE user_id=%s
-            """, (user_id,))
+    if 'password' in updates:
+        hashed = bcrypt.hashpw(updates['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        updates['password'] = hashed
 
-            if not cursor.fetchone():
-                return jsonify({"Failed":"User not found"}), 404
+    query = ", ".join([f"{key} = %s" for key in updates])
+    values = list(updates.values())
 
-            cursor.execute(
-                f"UPDATE Users SET {query}, updated_at = NOW() WHERE user_id = %s",
-                values + [user_id]
-            )
+    conn = db.engine.raw_connection()
+    cursor = None
+    try:
+        cursor = conn.cursor()
 
-            conn.commit()
-            return jsonify({"Success":"User updated"}), 200
+        cursor.execute("""
+            SELECT user_id FROM Users WHERE user_id=%s
+        """, (user_id,))
 
-        except Exception as e:
-             conn.rollback()
-             print(e)
-             return jsonify({"Failed":"Some error occured", "Error:":f"{e}"}), 500
-        except DataError as e:
-             conn.rollback()
-             print(e)
-             return jsonify({"Failed":"Invalid data present"}), 400
-        finally:
-             if cursor:
-                  cursor.close()
-             conn.close()
+        if not cursor.fetchone():
+            return jsonify({"Failed":"User not found"}), 404
+
+        cursor.execute(
+            f"UPDATE Users SET {query}, updated_at = NOW() WHERE user_id = %s",
+            values + [user_id]
+        )
+
+        conn.commit()
+        return jsonify({"Success":"User updated"}), 200
+
+    except Exception as e:
+        conn.rollback()
+        print(e)
+        return jsonify({"Failed":"Some error occured", "Error:":f"{e}"}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        conn.close()
 
 @jwt_required()
 def update_coach():

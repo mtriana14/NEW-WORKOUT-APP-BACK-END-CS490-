@@ -9,9 +9,31 @@ import bcrypt
 
 def google_sign_in():
     """
-    Frontend sends Google's ID token after the user completes Google's popup.
-    We verify it with Google, then either create a new User or log in the
-    existing one. Returns the same token+user shape as /auth/login.
+    Sign in or register with a Google ID token
+    ---
+    tags:
+      - Authentication
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - id_token
+          properties:
+            id_token:
+              type: string
+              description: Google OAuth2 ID token from the frontend popup
+    responses:
+      200:
+        description: Sign-in successful (or account created)
+      400:
+        description: Missing or invalid token
+      401:
+        description: Token verification failed
+      500:
+        description: Google OAuth not configured on server
     """
     data = request.get_json() or {}
     id_token_str = data.get('id_token') or data.get('credential')

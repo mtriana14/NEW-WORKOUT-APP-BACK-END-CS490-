@@ -20,13 +20,40 @@ def _exercise_dict(ex):
 
 
 def get_all_exercises():
-    """GET /api/admin/exercises"""
+    """
+    Get all active exercises
+    ---
+    tags:
+      - Exercises
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: List of exercises
+    """
     exercises = Exercise.query.filter_by(is_active=True).all()
     return jsonify({'exercises': [_exercise_dict(ex) for ex in exercises]}), 200
 
 
 def get_exercise_by_id(exercise_id):
-    """GET /api/admin/exercises/<exercise_id>"""
+    """
+    Get a single exercise by ID
+    ---
+    tags:
+      - Exercises
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: exercise_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Exercise details
+      404:
+        description: Exercise not found
+    """
     exercise = Exercise.query.filter_by(e_id=exercise_id, is_active=True).first()
     if not exercise:
         return jsonify({'error': 'Exercise not found'}), 404
@@ -34,7 +61,46 @@ def get_exercise_by_id(exercise_id):
 
 
 def create_exercise():
-    """POST /api/admin/exercises"""
+    """
+    Create a new exercise (admin)
+    ---
+    tags:
+      - Exercises
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - name
+            - muscle_group
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            muscle_group:
+              type: string
+            equipment_type:
+              type: string
+            difficulty:
+              type: string
+              enum: [beginner, intermediate, advanced]
+            instructions:
+              type: string
+            video_url:
+              type: string
+    responses:
+      201:
+        description: Exercise created
+      400:
+        description: Missing required fields
+      409:
+        description: Exercise name already exists
+    """
     data = request.get_json() or {}
 
     if not data.get('name') or not data.get('muscle_group'):
@@ -59,7 +125,43 @@ def create_exercise():
 
 
 def update_exercise(exercise_id):
-    """PUT /api/admin/exercises/<exercise_id>"""
+    """
+    Update an exercise (admin)
+    ---
+    tags:
+      - Exercises
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: exercise_id
+        type: integer
+        required: true
+      - in: body
+        name: body
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            muscle_group:
+              type: string
+            equipment_type:
+              type: string
+            difficulty:
+              type: string
+            instructions:
+              type: string
+            video_url:
+              type: string
+    responses:
+      200:
+        description: Exercise updated
+      404:
+        description: Exercise not found
+    """
     exercise = Exercise.query.filter_by(e_id=exercise_id, is_active=True).first()
     if not exercise:
         return jsonify({'error': 'Exercise not found'}), 404
@@ -85,7 +187,24 @@ def update_exercise(exercise_id):
 
 
 def delete_exercise(exercise_id):
-    """DELETE /api/admin/exercises/<exercise_id>"""
+    """
+    Soft-delete an exercise (admin)
+    ---
+    tags:
+      - Exercises
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: exercise_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Exercise deleted
+      404:
+        description: Exercise not found
+    """
     exercise = Exercise.query.filter_by(e_id=exercise_id, is_active=True).first()
     if not exercise:
         return jsonify({'error': 'Exercise not found'}), 404
@@ -115,7 +234,30 @@ _COMMON_EXERCISES = [
 
 
 def bulk_create_common_exercises():
-    """POST /api/admin/exercises/common"""
+    """
+    Bulk-create a set of common exercises (admin)
+    ---
+    tags:
+      - Exercises
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        schema:
+          type: object
+          properties:
+            exercises:
+              type: array
+              description: Custom list; omit to seed the built-in 15 common exercises
+              items:
+                type: object
+    responses:
+      201:
+        description: Exercises created (skipped duplicates reported)
+      400:
+        description: Empty exercises array provided
+    """
     data = request.get_json(silent=True, force=True) or {}
     exercises_input = data.get('exercises')
 

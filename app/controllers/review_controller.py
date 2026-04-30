@@ -8,6 +8,42 @@ from datetime import datetime
 
 
 def leave_review(coach_id):
+    """
+    Submit or update a review for a coach
+    ---
+    tags:
+      - Reviews
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - rating
+          properties:
+            rating:
+              type: integer
+              minimum: 1
+              maximum: 5
+            comment:
+              type: string
+    responses:
+      200:
+        description: Review updated
+      201:
+        description: Review submitted
+      400:
+        description: Missing or invalid rating
+      403:
+        description: You have not worked with this coach
+    """
     user_id = int(get_jwt_identity())
 
     hire = Hire.query.filter_by(user_id=user_id, coach_id=coach_id).first()
@@ -51,6 +87,22 @@ def leave_review(coach_id):
 
 
 def get_coach_reviews(coach_id):
+    """
+    Get all reviews for a coach
+    ---
+    tags:
+      - Reviews
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: List of reviews with average rating
+      404:
+        description: Coach not found
+    """
     coach = Coach.query.get(coach_id)
     if not coach:
         return jsonify({'error': 'Coach not found'}), 404
@@ -70,6 +122,24 @@ def get_coach_reviews(coach_id):
 
 
 def delete_review(coach_id):
+    """
+    Delete your review for a coach
+    ---
+    tags:
+      - Reviews
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Review deleted
+      404:
+        description: Review not found
+    """
     user_id = int(get_jwt_identity())
 
     review = Review.query.filter_by(user_id=user_id, coach_id=coach_id).first()

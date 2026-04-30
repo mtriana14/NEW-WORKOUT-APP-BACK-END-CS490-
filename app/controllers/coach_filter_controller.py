@@ -90,7 +90,7 @@ def search_for_coaches():
         if first_name:
             query = query.filter(User.first_name.ilike(f'%{first_name}%'))
         elif last_name:
-            query = query.filter(User.first_name.ilike(f'%{last_name}%'))
+            query = query.filter(User.last_name.ilike(f'%{last_name}%'))
         elif specialty:
             query = query.filter(Coach.specialization.ilike(f'%{specialty}%'))
 
