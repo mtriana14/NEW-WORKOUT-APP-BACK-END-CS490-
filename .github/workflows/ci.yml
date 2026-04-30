@@ -135,8 +135,8 @@ jobs:
           from app.controllers.chat_controller import get_conversations, get_messages, get_or_create_convo
           from app.controllers.progress_controller import get_client_progress, save_progress_entry
           from app.controllers.account_status_controller import deactivate_my_account, reactivate_account
-          from app.controllers.progress_photo_controller import upload_progress_photo, get_my_photos
-          from app.controllers.admin_reports_controller import get_active_user_report
+          from app.controllers.progress_photo_controller import upload_progress_photo, list_my_progress_photos
+          from app.controllers.admin_reports_controller import get_active_users_report
           print('All controllers imported successfully')
           "
 
