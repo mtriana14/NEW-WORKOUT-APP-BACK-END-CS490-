@@ -175,13 +175,10 @@ jobs:
     if: github.ref == 'refs/heads/main_2' && github.event_name == 'push'
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Deploy to Railway
-        run: railway up --detach --service new-workout-app-back-end-cs490
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      - name: Trigger Railway Redeploy
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"query": "mutation { serviceInstanceRedeploy(environmentId: \"c63dde8f-ad41-4ce5-86c4-fd90968cf6b5\", serviceId: \"9843d01a-f0f6-4152-8f30-0713c77f86b9\") }"}' \
+            https://backboard.railway.app/graphql/v2
