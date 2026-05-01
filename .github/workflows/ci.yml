@@ -4,13 +4,6 @@ on:
   push:
     branches: [ main_2 ]
   pull_request:
-﻿
-name: HeraHealth Backend CI
-
-on:
-  push:
-    branches: [ main_2 ]
-  pull_request:
     branches: [ main_2 ]
 
 jobs:
