@@ -50,3 +50,4 @@ def dismiss_coach(coach_id):
     return jsonify({
         'message': 'Coach dismissed successfully'
     }), 200
+

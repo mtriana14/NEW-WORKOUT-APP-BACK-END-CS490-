@@ -57,25 +57,20 @@ def get_all_registrations():
         CoachRegistration.created_at.desc()
     ).all()
 
-    res = []
+    result = []
     for registration, user in regs:
-        res.append({
-            'reg_id': registration.reg_id,
-            'user_id': registration.user_id,
-            'applicant': {
-                'name': f"{user.first_name} {user.last_name}",
-                'email': user.email,
-                'phone': user.phone
-            },
+        result.append({
+            'coach_id':       registration.reg_id,
+            'name':           f'{user.first_name} {user.last_name}',
+            'email':          user.email,
+            'specialization': registration.specialty,
+            'status':         registration.application_status,
             'qualifications': registration.qualifications,
-            'specialty': registration.specialty,
             'document_links': registration.document_links,
-            'application_status': registration.application_status,
-            'created_at': registration.created_at.isoformat() if registration.created_at else None,
-            'updated_at': registration.updated_at.isoformat() if registration.updated_at else None
+            'created_at':     registration.created_at.isoformat() if registration.created_at else None,
         })
 
-    return jsonify({'Registrations': res}), 200  # fixed: outside loop
+    return jsonify(result), 200
 
 
 def process_coach_registration(reg_id):

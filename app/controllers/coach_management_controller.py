@@ -100,3 +100,74 @@ def update_coach_status(coach_id):
         return disable_coach(coach_id)
     else:
         return jsonify({'error': 'Invalid status. Must be suspend, reactivate, or disable'}), 400
+
+def get_all_coaches():
+    """GET /api/admin/coaches"""
+    coaches = Coach.query.all()
+    result = []
+    for coach in coaches:
+        user = User.query.filter_by(user_id=coach.user_id).first()
+        result.append({
+            'coach_id':         coach.coach_id,
+            'name':             f'{user.first_name} {user.last_name}' if user else 'Unknown',
+            'email':            user.email if user else None,
+            'specialization':   coach.specialization,
+            'experience_years': coach.experience_years,
+            'bio':              coach.bio,
+            'cost':             float(coach.hourly_rate) if coach.hourly_rate else 0,
+            'certifications':   coach.certifications,
+            'status':           coach.status,
+        })
+    return jsonify({'coaches': result}), 200
+
+
+def get_pending_coaches():
+    """GET /api/admin/coaches/pending"""
+    coaches = Coach.query.filter_by(status='pending').all()
+    result = []
+    for coach in coaches:
+        user = User.query.filter_by(user_id=coach.user_id).first()
+        result.append({
+            'coach_id':         coach.coach_id,
+            'name':             f'{user.first_name} {user.last_name}' if user else 'Unknown',
+            'email':            user.email if user else None,
+            'specialization':   coach.specialization,
+            'experience_years': coach.experience_years,
+            'bio':              coach.bio,
+            'cost':             float(coach.hourly_rate) if coach.hourly_rate else 0,
+            'certifications':   coach.certifications,
+            'status':           coach.status,
+        })
+    return jsonify({'pending_coaches': result}), 200
+
+
+def process_coach(coach_id):
+    """PUT /api/admin/coaches/<coach_id>/process — approve or reject"""
+    data = request.get_json() or {}
+    action = data.get('action')
+
+    if action not in ('approved', 'rejected'):
+        return jsonify({'error': 'action must be approved or rejected'}), 400
+
+    coach = Coach.query.filter_by(coach_id=coach_id).first()
+    if not coach:
+        return jsonify({'error': 'Coach not found'}), 404
+
+    if coach.status != 'pending':
+        return jsonify({'error': 'Coach is not pending review'}), 400
+
+    coach.status = action
+
+    user = User.query.filter_by(user_id=coach.user_id).first()
+    if user and action == 'rejected':
+        user.is_active = False
+
+    notification = Notification(
+        user_id=coach.user_id,
+        title='Application Update',
+        message=f'Your coach application has been {action}.',
+        type='system'
+    )
+    db.session.add(notification)
+    db.session.commit()
+    return jsonify({'message': f'Coach {action} successfully'}), 200

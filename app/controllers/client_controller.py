@@ -84,6 +84,7 @@ def get_coach_details(coach_id):
 # ==================== CLIENT REQUESTS ====================
  
 def send_coach_request(user_id):
+    print(user_id)
     """
     POST /api/client/<user_id>/requests
     Send a coaching request to a coach.
@@ -226,3 +227,30 @@ def get_my_meal_plans(user_id):
         })
  
     return jsonify({'meal_plans': result}), 200
+
+
+def get_pending_request(user_id):
+    """
+    GET /api/client/<user_id>/pending-request
+    Returns the client's pending coaching request, if any.
+    """
+    pending = ClientRequest.query.filter_by(
+        client_id=user_id, status='pending'
+    ).first()
+
+    if not pending:
+        return jsonify({'pending_request': None}), 200
+
+    coach      = Coach.query.filter_by(coach_id=pending.coach_id).first()
+    coach_user = User.query.filter_by(user_id=coach.user_id).first() if coach else None
+
+    return jsonify({
+        'pending_request': {
+            'request_id':          pending.request_id,
+            'coach_id':            pending.coach_id,
+            'coach_name':          f'{coach_user.first_name} {coach_user.last_name}' if coach_user else 'Unknown',
+            'coach_specialization': coach.specialization if coach else None,
+            'message':             pending.message,
+            'requested_at':        str(pending.created_at),
+        }
+    }), 200

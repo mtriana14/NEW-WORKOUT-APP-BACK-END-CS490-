@@ -24,4 +24,14 @@ def get_users():
         cursor.close()
         conn.close()
 
-
+@users_bp.route('/users/<int:user_id>/name', methods=['GET'])
+def get_user_name(user_id):
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    return jsonify({
+        'user_id': user.user_id,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'full_name': f"{user.first_name} {user.last_name}"
+    }), 200

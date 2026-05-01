@@ -19,13 +19,18 @@ def create_app():
     app.config['DB_NAME'] = os.getenv('DB_NAME')
     app.config['DB_PORT'] = os.getenv('DB_PORT', '3305')
 
-    CORS(app, origins=['http://localhost:3000', 'https://workout-webapp-frontend-production.up.railway.app'], supports_credentials=True)
+    CORS(app, origins=['http://localhost:3000', 'https://workout-webapp-frontend-production.up.railway.app' ,'http://127.0.0.1:3000'], supports_credentials=True)
     JWTManager(app)
     init_db(app)
 
     with app.app_context():
-        from app.models import User, Coach, CoachAvailability, ClientRequest, Exercise, Notification, Payment, CoachRegistration, CoachManagement, Hire, Review, ActivityLog, ProgressPhoto
+        from app.models import User, Coach, CoachAvailability, ClientRequest, Exercise, Notification, Payment, CoachRegistration, CoachManagement, Hire, Review, ActivityLog, ProgressPhoto , MessageList, Message
 
+     
+    from app.routes.progress_routes import progress_bp
+    app.register_blueprint(progress_bp, url_prefix='/api')
+    from app.routes.chat_routes import chat_routes_bp
+    app.register_blueprint(chat_routes_bp, url_prefix='/api')
     from app.routes.auth_routes import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/api')
     from app.routes.coach_availability_routes import coach_availability_bp

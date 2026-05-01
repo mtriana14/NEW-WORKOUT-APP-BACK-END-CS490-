@@ -8,6 +8,7 @@ from app.models.saved_billing import SavedBilling
 from app.models.notification import Notification
 from flask_jwt_extended import get_jwt_identity
 from datetime import date, datetime
+from flask_jwt_extended import jwt_required
 import uuid
 
 def subscribe_to_coach(coach_id):
@@ -128,3 +129,17 @@ def subscribe_to_coach(coach_id):
         'start_date': str(subscription.start_date),
         'next_billing': str(subscription.next_billing)
     }), 201
+
+@jwt_required()
+def get_my_coach():
+    user_id = int(get_jwt_identity())
+
+    subscription = Subscription.query.filter_by(
+        user_id=user_id,
+        status='active'
+    ).first()
+
+    if not subscription:
+        return jsonify({'error': 'No active coach subscription found'}), 404
+
+    return jsonify({'coach_id': subscription.coach_id}), 200

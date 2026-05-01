@@ -2,7 +2,7 @@ from app.config.db import db
 from datetime import datetime
 
 class CoachRegistration(db.Model):
-    __tablename__ = 'CoachRegistrations'
+    __tablename__ = 'coachregistrations'
     reg_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=False, unique=True)
     qualifications = db.Column(db.Text, nullable=True)
