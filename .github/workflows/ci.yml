@@ -4,6 +4,13 @@ on:
   push:
     branches: [ main_2 ]
   pull_request:
+﻿
+name: HeraHealth Backend CI
+
+on:
+  push:
+    branches: [ main_2 ]
+  pull_request:
     branches: [ main_2 ]
 
 jobs:
@@ -167,3 +174,21 @@ jobs:
           UPLOAD_FOLDER: static/uploads/profile_photos
         run: |
           pytest tests/ -v --tb=short
+
+  deploy:
+    name: Deploy to Railway
+    runs-on: ubuntu-latest
+    needs: ci
+    if: github.ref == 'refs/heads/main_2' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        run: railway up --detach --service new-workout-app-back-end-cs490
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
