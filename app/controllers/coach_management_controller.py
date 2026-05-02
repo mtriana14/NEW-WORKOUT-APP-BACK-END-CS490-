@@ -34,7 +34,26 @@ def get_all_coaches():
 
 
 def suspend_coach(coach_id):
-    """Admin suspends a coach account."""
+    """
+    Suspend a coach account (admin)
+    ---
+    tags:
+      - Coach Management
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Coach suspended
+      400:
+        description: Coach already suspended
+      404:
+        description: Coach not found
+    """
     coach = Coach.query.filter_by(coach_id=coach_id).first()
     if not coach:
         return jsonify({'error': 'Coach not found'}), 404
@@ -60,7 +79,26 @@ def suspend_coach(coach_id):
  
  
 def reactivate_coach(coach_id):
-    """Admin reactivates a suspended coach account."""
+    """
+    Reactivate a suspended coach account (admin)
+    ---
+    tags:
+      - Coach Management
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Coach reactivated
+      400:
+        description: Coach is not suspended
+      404:
+        description: Coach not found
+    """
     coach = Coach.query.filter_by(coach_id=coach_id).first()
     if not coach:
         return jsonify({'error': 'Coach not found'}), 404
@@ -86,7 +124,26 @@ def reactivate_coach(coach_id):
  
  
 def disable_coach(coach_id):
-    """Admin permanently disables a coach account."""
+    """
+    Permanently disable a coach account (admin)
+    ---
+    tags:
+      - Coach Management
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Coach account disabled
+      400:
+        description: Coach already disabled
+      404:
+        description: Coach not found
+    """
     coach = Coach.query.filter_by(coach_id=coach_id).first()
     if not coach:
         return jsonify({'error': 'Coach not found'}), 404
@@ -112,7 +169,24 @@ def disable_coach(coach_id):
  
  
 def get_coach_detail(coach_id):
-    """GET /api/admin/coaches/<coach_id>"""
+    """
+    Get full details for a coach (admin)
+    ---
+    tags:
+      - Coach Management
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Coach details
+      404:
+        description: Coach not found
+    """
     coach = Coach.query.filter_by(coach_id=coach_id).first()
     if not coach:
         return jsonify({'error': 'Coach not found'}), 404
@@ -174,9 +248,35 @@ def reject_coach(coach_id):
 
 def update_coach_status(coach_id):
     """
-    PUT /api/admin/coaches/<coach_id>/status
-    Body: { status: 'suspend'|'reactivate'|'disable'|'approved'|'rejected' }
-    Also accepts { action: 'approved'|'rejected' } for compatibility.
+    Update coach status via a single action field (admin)
+    ---
+    tags:
+      - Coach Management
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - status
+          properties:
+            status:
+              type: string
+              enum: [suspend, reactivate, disable, approved, rejected]
+    responses:
+      200:
+        description: Status updated
+      400:
+        description: Invalid status value
+      404:
+        description: Coach not found
     """
     data = request.get_json() or {}
     status = data.get('status') or data.get('action')

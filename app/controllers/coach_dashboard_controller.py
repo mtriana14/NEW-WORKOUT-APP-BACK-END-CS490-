@@ -12,6 +12,64 @@ from sqlalchemy import func, extract
 
 def get_coach_dashboard():
     """
+    Get comprehensive statistics for the coach dashboard
+    ---
+    tags:
+      - Coach Analytics
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Coach dashboard data including active clients, earnings, and recent activity
+        schema:
+          type: object
+          properties:
+            coach_id:
+              type: integer
+            active_clients:
+              type: object
+              properties:
+                count:
+                  type: integer
+                new_this_month:
+                  type: integer
+            earnings:
+              type: object
+              properties:
+                this_month:
+                  type: number
+                last_month:
+                  type: number
+                change_pct:
+                  type: number
+            monthly_revenue:
+              type: array
+              items:
+                type: object
+                properties:
+                  month:
+                    type: string
+                  year:
+                    type: integer
+                  total:
+                    type: number
+            recent_activity:
+              type: array
+              items:
+                type: object
+                properties:
+                  client_name:
+                    type: string
+                  action:
+                    type: string
+                  log_type:
+                    type: string
+                  log_date:
+                    type: string
+      404:
+        description: Coach profile not found
+    """
+    """
     Returns all stats needed for the coach dashboard we have for frontend
     """
     user_id = int(get_jwt_identity())
@@ -121,7 +179,7 @@ def get_coach_dashboard():
     return jsonify({
         'coach_id': coach_id,
         'active_clients': {
-            'count':         active_client_count,
+            'count':          active_client_count,
             'new_this_month': new_this_month
         },
         'earnings': {
