@@ -5,6 +5,7 @@ from app.models.exercise import Exercise
 
 def _exercise_dict(ex):
     return {
+        'id': ex.e_id,
         'e_id': ex.e_id,
         'name': ex.name,
         'description': ex.description,

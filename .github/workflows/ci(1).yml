@@ -167,3 +167,18 @@ jobs:
           UPLOAD_FOLDER: static/uploads/profile_photos
         run: |
           pytest tests/ -v --tb=short
+
+  deploy:
+    name: Deploy to Railway
+    runs-on: ubuntu-latest
+    needs: ci
+    if: github.ref == 'refs/heads/main_2' && github.event_name == 'push'
+
+    steps:
+      - name: Trigger Railway Redeploy
+        run: |
+          curl -X POST \
+            -H "Project-Access-Token: ${{ secrets.RAILWAY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"query": "mutation { serviceInstanceRedeploy(environmentId: \"c63dde8f-ad41-4ce5-86c4-fd90968cf6b5\", serviceId: \"9843d01a-f0f6-4152-8f30-0713c77f86b9\") }"}' \
+            https://backboard.railway.com/graphql/v2

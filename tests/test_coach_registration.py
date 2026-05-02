@@ -100,16 +100,16 @@ class TestGetPendingRegistrations:
 
         response = client.get('/api/admin/coaches/pending', headers=auth_headers(client))
         assert response.status_code == 200
-        assert 'Registrations' in response.get_json()
+        assert 'pending_coaches' in response.get_json()
 
     @patch('app.controllers.coach_registration_controller2.db')
     def test_get_pending_registrations_empty(self, mock_db, client):
-        """Returns note when no pending registrations."""
+        """Returns empty list when no pending registrations."""
         mock_db.session.query.return_value.join.return_value.filter.return_value.order_by.return_value.all.return_value = []
 
         response = client.get('/api/admin/coaches/pending', headers=auth_headers(client))
         assert response.status_code == 200
-        assert 'registrations' in response.get_json()
+        assert 'pending_coaches' in response.get_json()
 
 
 # ─── UC 10.2: process_coach_registration ─────────────────────────────────────
