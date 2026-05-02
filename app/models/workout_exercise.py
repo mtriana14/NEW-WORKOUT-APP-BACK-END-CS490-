@@ -6,7 +6,7 @@ class WorkoutExercise(db.Model):
 
     workout_exercises_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     plan_id    = db.Column(db.Integer, db.ForeignKey('workoutplans.plan_id'), nullable=False)
-    exercise_id = db.Column(db.Integer, db.ForeignKey('Exercises.e_id'), nullable=False)
+    exercise_id = db.Column(db.Integer, db.ForeignKey('exercises.e_id'), nullable=False)
     num_sets   = db.Column(db.Integer, nullable=True)
     reps       = db.Column(db.Integer, nullable=True)
     num_length = db.Column(db.Integer, nullable=True)

@@ -4,7 +4,7 @@ from datetime import datetime
 class CoachAvailability(db.Model):
     __tablename__ = 'coachavailability'
     availability_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    coach_id = db.Column(db.Integer, db.ForeignKey('Coaches.coach_id'), nullable=False)
+    coach_id = db.Column(db.Integer, db.ForeignKey('coaches.coach_id'), nullable=False)
     day_of_week = db.Column(db.Enum(
         'Monday', 'Tuesday', 'Wednesday',
         'Thursday', 'Friday', 'Saturday', 'Sunday'
