@@ -2,7 +2,7 @@ from app.config.db import db
 from datetime import datetime
 
 class Exercise(db.Model):
-    __tablename__ = 'Exercises'
+    __tablename__ = 'exercises'
     e_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(150), nullable=False, unique=True)
     description = db.Column(db.Text, nullable=True)

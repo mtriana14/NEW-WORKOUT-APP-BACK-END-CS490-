@@ -2,7 +2,7 @@ from app.config.db import db
 from datetime import datetime
 
 class Notification(db.Model):
-    __tablename__ = 'Notifications'
+    __tablename__ = 'notifications'
     notification_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=False)
     title = db.Column(db.String(255), nullable=False)

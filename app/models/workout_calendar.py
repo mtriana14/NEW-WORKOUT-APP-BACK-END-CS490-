@@ -2,7 +2,7 @@ from app.config.db import db
 from datetime import datetime
 
 class WorkoutCalendar(db.Model):
-    __tablename__ = 'WorkoutCalendar'
+    __tablename__ = 'workoutcalendar'
 
     calendar_id    = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id        = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=False)

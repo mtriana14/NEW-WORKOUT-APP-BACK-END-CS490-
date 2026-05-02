@@ -2,7 +2,7 @@ from app.config.db import db
 from datetime import datetime
 
 class ActivityLog(db.Model):
-    __tablename__ = 'ActivityLogs'
+    __tablename__ = 'activitylogs'
 
     log_id           = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id          = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=False)

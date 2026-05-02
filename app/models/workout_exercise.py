@@ -2,7 +2,7 @@ from app.config.db import db
 from datetime import datetime
 
 class WorkoutExercise(db.Model):
-    __tablename__ = 'WorkoutExercises'
+    __tablename__ = 'workoutexercises'
 
     workout_exercises_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     plan_id    = db.Column(db.Integer, db.ForeignKey('workoutplans.plan_id'), nullable=False)

@@ -4,7 +4,7 @@ from datetime import datetime
 
 class ProgressPhoto(db.Model):
     """Before / progress / after photos a user uploads to track their transformation."""
-    __tablename__ = 'ProgressPhotos'
+    __tablename__ = 'progressphotos'
 
     photo_id   = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id    = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=False)
