@@ -273,6 +273,7 @@ def get_my_coach(user_id):
     return jsonify({
         'coach': {
             'coach_id':       coach.coach_id,
+            'user_id':        coach.user_id,
             'name':           f'{coach_user.first_name} {coach_user.last_name}' if coach_user else 'Unknown',
             'email':          coach_user.email if coach_user else None,
             'specialization': coach.specialization,

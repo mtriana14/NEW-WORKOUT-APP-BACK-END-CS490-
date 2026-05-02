@@ -5,12 +5,16 @@ from app.models.user import User
 def seed_coaches():
     """Seed initial coach profiles."""
 
-    if Coach.query.count() > 0:
-        print('Coaches already seeded, skipping...')
-        return
-
     john = User.query.filter_by(email='john.coach@fitnessapp.com').first()
     sarah = User.query.filter_by(email='sarah.coach@fitnessapp.com').first()
+
+    if not john or not sarah:
+        print('Coach users not found, skipping coach seeding...')
+        return
+
+    if Coach.query.filter_by(user_id=john.user_id).first():
+        print('Coaches already seeded, skipping...')
+        return
 
     coaches = [
         Coach(

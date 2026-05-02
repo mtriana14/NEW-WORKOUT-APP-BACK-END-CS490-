@@ -20,12 +20,16 @@ class Review(db.Model):
     coach  = db.relationship('Coach', backref='reviews')
 
     def to_dict(self):
+        reviewer_name = None
+        if self.client:
+            reviewer_name = f"{self.client.first_name} {self.client.last_name}".strip()
         return {
-            'review_id':  self.review_id,
-            'user_id':    self.user_id,
-            'coach_id':   self.coach_id,
-            'rating':     self.rating,
-            'comment':    self.comment,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'review_id':     self.review_id,
+            'user_id':       self.user_id,
+            'coach_id':      self.coach_id,
+            'rating':        self.rating,
+            'comment':       self.comment,
+            'reviewer_name': reviewer_name,
+            'created_at':    self.created_at.isoformat() if self.created_at else None,
+            'updated_at':    self.updated_at.isoformat() if self.updated_at else None,
         }

@@ -42,9 +42,9 @@ def get_or_create_convo(coach_id):
         if int(user_id) == int(coach_id):
             return jsonify({"Failed":"Cant start convo with yourself"}), 400
         
-        convo = MessageList.query.filter_by(user_id=user_id, coach_id=coach_id).first()
+        convo = MessageList.query.filter_by(user_id=user_id, coach_id=coach.coach_id).first()
         if not convo:
-            convo = MessageList(user_id=user_id, coach_id=coach_id)
+            convo = MessageList(user_id=user_id, coach_id=coach.coach_id)
             db.session.add(convo)
             db.session.commit()
         
@@ -77,7 +77,10 @@ def get_conversations():
         if not user:
             return jsonify({"Failed":"User not found"}), 404
         if user.role == 'coach':
-            convos = MessageList.query.filter_by(coach_id=user_id).all()
+            coach = Coach.query.filter_by(user_id=user_id).first()
+            if not coach:
+                return jsonify({"Conversations": []}), 200
+            convos = MessageList.query.filter_by(coach_id=coach.coach_id).all()
         else:
             convos = MessageList.query.filter_by(user_id=user_id).all()
         return jsonify({"Conversations":[convo.to_dict() for convo in convos]}), 200

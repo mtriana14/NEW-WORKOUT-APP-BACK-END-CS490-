@@ -88,30 +88,16 @@ def leave_review(coach_id):
 
 def get_coach_reviews(coach_id):
     """
-    Get all reviews for a coach
-    ---
-    tags:
-      - Reviews
-    parameters:
-      - in: path
-        name: coach_id
-        type: integer
-        required: true
-    responses:
-      200:
-        description: List of reviews with average rating
-      404:
-        description: Coach not found
+    Get all reviews for a coach.
+    The coach_id URL param is the coach's user_id (matches profile page URL convention).
     """
-    coach = Coach.query.get(coach_id)
+    coach = Coach.query.filter_by(user_id=coach_id).first()
     if not coach:
-        return jsonify({'error': 'Coach not found'}), 404
+        return jsonify({'coach_id': coach_id, 'avg_rating': None, 'total': 0, 'reviews': []}), 200
 
-    reviews = Review.query.filter_by(coach_id=coach_id).order_by(Review.created_at.desc()).all()
+    reviews = Review.query.filter_by(coach_id=coach.coach_id).order_by(Review.created_at.desc()).all()
 
-    avg_rating = None
-    if reviews:
-        avg_rating = round(sum(r.rating for r in reviews) / len(reviews), 2)
+    avg_rating = round(sum(r.rating for r in reviews) / len(reviews), 2) if reviews else None
 
     return jsonify({
         'coach_id':   coach_id,
