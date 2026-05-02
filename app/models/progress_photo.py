@@ -7,7 +7,7 @@ class ProgressPhoto(db.Model):
     __tablename__ = 'progressphotos'
 
     photo_id   = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id    = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=False)
+    user_id    = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
 
     file_path  = db.Column(db.String(500), nullable=False)
     label      = db.Column(db.Enum('before', 'progress', 'after'), nullable=False, default='progress')

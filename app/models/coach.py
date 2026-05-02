@@ -4,7 +4,7 @@ from datetime import datetime
 class Coach(db.Model):
     __tablename__ = 'coaches'
     coach_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=False, unique=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False, unique=True)
     specialization = db.Column(db.Enum('fitness', 'nutrition', 'both'), default='fitness')
     certifications = db.Column(db.Text, nullable=True)
     experience_years = db.Column(db.Integer, nullable=True)

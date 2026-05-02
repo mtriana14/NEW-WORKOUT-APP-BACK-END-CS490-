@@ -5,7 +5,7 @@ class MealPlan(db.Model):
     __tablename__ = "mealplans"
 
     meal_plan_id = db.Column(db.Integer, primary_key = True, nullable=False, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('Users.user_id') ,nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id') ,nullable=False)
     coach_id = db.Column(db.Integer, db.ForeignKey('Coaches.coach_id') ,nullable=True)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text)

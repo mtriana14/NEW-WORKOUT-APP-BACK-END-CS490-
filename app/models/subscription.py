@@ -4,7 +4,7 @@ from datetime import datetime
 class Subscription(db.Model):
     __tablename__ = 'subscriptions'
     subscription_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     coach_id = db.Column(db.Integer, db.ForeignKey('Coaches.coach_id'), nullable=False)
     plan_type = db.Column(db.String(50), nullable=False)
     amount = db.Column(db.Numeric(10, 2), nullable=False)

@@ -5,7 +5,7 @@ class ActivityLog(db.Model):
     __tablename__ = 'activitylogs'
 
     log_id           = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id          = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=False)
+    user_id          = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     activity_type    = db.Column(db.Enum('strength', 'cardio', 'steps', 'calories'), nullable=False)
     # Strength fields
     exercise_id      = db.Column(db.Integer, db.ForeignKey('Exercises.e_id'), nullable=True)

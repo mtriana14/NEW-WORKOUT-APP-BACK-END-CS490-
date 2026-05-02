@@ -5,7 +5,7 @@ class Review(db.Model):
     __tablename__ = 'reviews'
 
     review_id  = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id    = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=False)
+    user_id    = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     coach_id   = db.Column(db.Integer, db.ForeignKey('Coaches.coach_id'), nullable=False)
     rating     = db.Column(db.Integer, nullable=False)
     comment    = db.Column(db.Text, nullable=True)

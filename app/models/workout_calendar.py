@@ -5,7 +5,7 @@ class WorkoutCalendar(db.Model):
     __tablename__ = 'workoutcalendar'
 
     calendar_id    = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id        = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=False)
+    user_id        = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     plan_id        = db.Column(db.Integer, db.ForeignKey('workoutplans.plan_id'), nullable=False)
     scheduled_date = db.Column(db.Date, nullable=False)
     is_completed   = db.Column(db.Boolean, nullable=False, default=False)
