@@ -7,7 +7,7 @@ class Payment(db.Model):
     client_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     coach_id = db.Column(db.Integer, db.ForeignKey('coaches.coach_id'), nullable=False)
     subscription_id = db.Column(db.Integer, db.ForeignKey('subscriptions.subscription_id'), nullable=True)
-    card_id = db.Column(db.Integer, db.ForeignKey('savedbilling.card_id'), nullable=True)
+    card_id = db.Column(db.Integer, db.ForeignKey('SavedBilling.card_id'), nullable=True)
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     currency = db.Column(db.String(10), nullable=False, default='USD')
     payment_method_type = db.Column(db.Enum('credit_card', 'debit_card', 'paypal'), nullable=True)
@@ -18,8 +18,8 @@ class Payment(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    client = db.relationship('user', backref='payments')
-    coach = db.relationship('coach', backref='payments')
+    client = db.relationship('User', backref='payments')
+    coach = db.relationship('Coach', backref='payments')
 
     def __repr__(self):
         return f'<Payment {self.transaction_id} - {self.status}>'
