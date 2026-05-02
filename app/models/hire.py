@@ -2,7 +2,7 @@ from app.config.db import db
 from datetime import datetime
 
 class Hire(db.Model):
-    __tablename__ = 'Hires'
+    __tablename__ = 'hires'
     hire_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     coach_id = db.Column(db.Integer, db.ForeignKey('coaches.coach_id'), nullable=False)
@@ -14,7 +14,7 @@ class Hire(db.Model):
     coach = db.relationship('Coach', backref='hires')
 
     def __repr__(self):
-        return f'<Hire {self.user_id} -> {self.coach_id}>'
+        return f'<hire {self.user_id} -> {self.coach_id}>'
     
     def to_dict(self):
         return {

@@ -2,7 +2,7 @@ from app.config.db import db
 from datetime import datetime
 
 class MealPlanFood(db.Model):
-    __tablename__ = 'mealplanFood'
+    __tablename__ = 'mealplanfood'
 
     item_id      = db.Column(db.Integer, primary_key=True, autoincrement=True)
     meal_plan_id = db.Column(db.Integer, db.ForeignKey('mealplans.meal_plan_id'), nullable=False)

@@ -11,8 +11,8 @@ class CoachManagement(db.Model):
     suspension_duration = db.Column(db.String(50), nullable=True)
     action_date = db.Column(db.DateTime, default=datetime.utcnow)
 
-    coach = db.relationship('Coach', backref='management_actions')
-    admin = db.relationship('User', backref='coach_management_actions')
+    coach = db.relationship('coach', backref='management_actions')
+    admin = db.relationship('user', backref='coach_management_actions')
 
     def __repr__(self):
         return f'<CoachManagement {self.coach_id} - {self.action_type}>'

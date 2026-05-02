@@ -12,8 +12,8 @@ class ClientRequest(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    client = db.relationship('User', backref='client_requests')
-    coach = db.relationship('Coach', backref='client_requests')
+    client = db.relationship('user', backref='client_requests')
+    coach = db.relationship('coach', backref='client_requests')
 
     def __repr__(self):
         return f'<ClientRequest {self.client_id} -> {self.coach_id}>'

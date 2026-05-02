@@ -6,7 +6,7 @@ class Review(db.Model):
 
     review_id  = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id    = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
-    coach_id   = db.Column(db.Integer, db.ForeignKey('Coaches.coach_id'), nullable=False)
+    coach_id   = db.Column(db.Integer, db.ForeignKey('coaches.coach_id'), nullable=False)
     rating     = db.Column(db.Integer, nullable=False)
     comment    = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
