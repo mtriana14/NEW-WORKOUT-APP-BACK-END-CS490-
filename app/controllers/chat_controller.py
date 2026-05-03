@@ -56,80 +56,63 @@ def get_or_create_convo(coach_id):
 
 @jwt_required()
 def get_conversations():
-    """
-    Get all conversations for the current user
-    ---
-    tags:
-      - Messaging & Real-time
-    security:
-      - Bearer: []
-    responses:
-      200:
-        description: List of conversations
-      404:
-        description: User not found
-      500:
-        description: Internal server error
-    """
     try:
         user_id = get_jwt_identity()
         user = User.query.get(user_id)
         if not user:
-            return jsonify({"Failed":"User not found"}), 404
+            return jsonify({"Failed": "User not found"}), 404
+
         if user.role == 'coach':
             coach = Coach.query.filter_by(user_id=user_id).first()
             if not coach:
                 return jsonify({"Conversations": []}), 200
+            # use coach.coach_id not user_id
             convos = MessageList.query.filter_by(coach_id=coach.coach_id).all()
         else:
             convos = MessageList.query.filter_by(user_id=user_id).all()
-        return jsonify({"Conversations":[convo.to_dict() for convo in convos]}), 200
+
+        return jsonify({"Conversations": [convo.to_dict() for convo in convos]}), 200
+
     except Exception as e:
-        print(e)
-        return jsonify({"Failed":str(e)}), 500
+        return jsonify({"Failed": str(e)}), 500
 
 @jwt_required()
 def get_messages(conversation_id):
-    """
-    Get messages for a specific conversation
-    ---
-    tags:
-      - Messaging & Real-time
-    security:
-      - Bearer: []
-    parameters:
-      - in: path
-        name: conversation_id
-        type: integer
-        required: true
-    responses:
-      200:
-        description: List of messages (marks unread as read)
-      404:
-        description: Conversation or messages not found
-    """
     try:
         user_id = get_jwt_identity()
+
+        # resolve coach_id in case user is a coach
+        coach = Coach.query.filter_by(user_id=user_id).first()
+        coach_id = coach.coach_id if coach else None
+
         convo = MessageList.query.filter(
-            (MessageList.MessageList_id == conversation_id) &
-            ((MessageList.user_id == user_id) | (MessageList.coach_id == user_id))
+            MessageList.MessageList_id == conversation_id
+        ).filter(
+            (MessageList.user_id == user_id) |
+            (MessageList.coach_id == coach_id)
         ).first()
+
         if not convo:
-            return jsonify({"Failed":"No convo found"}), 404
+            return jsonify({"Failed": "No convo found"}), 404
+
         messages = Message.query.filter_by(conversation_id=conversation_id).all()
         if not messages:
-            return jsonify({"Failed":"No messages found"}), 404
-        
-        Message.query.filter_by(conversation_id=conversation_id, is_read=False) \
-        .filter(Message.sender_id != user_id) \
-        .update({"is_read": True})
+            return jsonify({"Failed": "No messages found"}), 404
+
+        unread = Message.query.filter(
+            Message.conversation_id == conversation_id,
+            Message.is_read == False,
+            Message.sender_id != user_id
+        ).all()
+        for m in unread:
+            m.is_read = True
         db.session.commit()
+
         return jsonify({"messages": [m.to_dict() for m in messages]}), 200
-        
+
     except Exception as e:
         db.session.rollback()
-        print(e)
-        return jsonify({"Failed":str(e)}), 500
+        return jsonify({"Failed": str(e)}), 500
     
 @socketio.on('join')
 def handle_join(data):
@@ -156,29 +139,38 @@ def handle_message(data):
             emit('error', {'message': 'Message content cannot be empty'})
             return
 
-        conversation = MessageList.query.filter(
-            (MessageList.MessageList_id == conversation_id) &
-            ((MessageList.user_id == sender_id) | (MessageList.coach_id == sender_id))
-        ).first()
+        with current_app.app_context():
+            # resolve coach_id from user_id in case sender is a coach
+            coach = Coach.query.filter_by(user_id=sender_id).first()
+            coach_id = coach.coach_id if coach else None
 
-        if not conversation:
-            emit('error', {'message': 'Conversation not found or not authorized'})
-            return
+            conversation = MessageList.query.filter(
+                MessageList.MessageList_id == conversation_id
+            ).filter(
+                (MessageList.user_id == sender_id) |
+                (MessageList.coach_id == coach_id)
+            ).first()
 
-        message = Message(
-            conversation_id=conversation_id,
-            sender_id=sender_id,
-            content=content
-        )
-        db.session.add(message)
+            if not conversation:
+                emit('error', {'message': 'Conversation not found or not authorized'})
+                return
 
-        conversation.last_message_at = datetime.utcnow()
-        db.session.commit()
+            message = Message(
+                conversation_id=conversation_id,
+                sender_id=sender_id,
+                content=content
+            )
+            db.session.add(message)
+            conversation.last_message_at = datetime.utcnow()
+            db.session.commit()
 
-        emit('new_message', message.to_dict(), to=str(conversation_id))
+            message_dict = message.to_dict()
+
+        emit('new_message', message_dict, to=str(conversation_id))
 
     except Exception as e:
         db.session.rollback()
+        print(f"send_message error: {e}")
         emit('error', {'message': str(e)})
 
 @socketio.on('mark_read')
