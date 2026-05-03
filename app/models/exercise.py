@@ -2,7 +2,7 @@ from app.config.db import db
 from datetime import datetime
 
 class Exercise(db.Model):
-    __tablename__ = 'Exercises'
+    __tablename__ = 'exercises'
     e_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(150), nullable=False, unique=True)
     description = db.Column(db.Text, nullable=True)
@@ -18,7 +18,7 @@ class Exercise(db.Model):
     instructions = db.Column(db.Text, nullable=True)
     video_url = db.Column(db.String(255), nullable=True)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
-    created_by = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=True)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

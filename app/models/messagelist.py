@@ -4,8 +4,8 @@ from datetime import datetime
 class MessageList(db.Model):
     __tablename__ = 'messagelist'
     MessageList_id  = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id         = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=False)
-    coach_id        = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=False)
+    user_id         = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    coach_id        = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     last_message_at = db.Column(db.DateTime, nullable=True)
     created_at      = db.Column(db.DateTime, default=datetime.utcnow)
 
