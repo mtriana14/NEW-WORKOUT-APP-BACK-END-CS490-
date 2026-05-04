@@ -3,6 +3,7 @@ from app.config.db import db
 from app.models.user import User
 from app.models.coach import Coach
 from app.models.client_request import ClientRequest
+from app.models.hire import Hire
 from app.models.WorkoutPlan import WorkoutPlan
 from app.models.meal_plan import MealPlan
 from app.models.coach_availability import CoachAvailability
@@ -46,7 +47,7 @@ def get_available_coaches():
     GET /api/client/coaches
     Returns all approved coaches for a client to browse.
     """
-    coaches = Coach.query.filter_by(status='approved').all()
+    coaches = Coach.query.filter(Coach.status.in_(['active', 'approved'])).all()
     result = []
 
     for coach in coaches:
@@ -97,7 +98,10 @@ def get_coach_details(coach_id):
     GET /api/client/coaches/<coach_id>
     Returns full profile of a single approved coach.
     """
-    coach = Coach.query.filter_by(coach_id=coach_id, status='approved').first()
+    coach = Coach.query.filter(
+        Coach.coach_id == coach_id,
+        Coach.status.in_(['active', 'approved'])
+    ).first()
     if not coach:
         return jsonify({'error': 'Coach not found'}), 404
 
@@ -175,9 +179,20 @@ def send_coach_request(user_id):
     if not coach_id:
         return jsonify({'error': 'coach_id is required'}), 400
 
-    coach = Coach.query.filter_by(coach_id=coach_id, status='approved').first()
+    coach = Coach.query.filter(
+        Coach.coach_id == coach_id,
+        Coach.status.in_(['active', 'approved'])
+    ).first()
     if not coach:
         return jsonify({'error': 'Coach not found'}), 404
+
+    active_hire = Hire.query.filter_by(
+        user_id=user_id,
+        coach_id=coach_id,
+        status='active'
+    ).first()
+    if active_hire:
+        return jsonify({'error': 'You are already in an active coaching relationship with this coach'}), 409
 
     existing = ClientRequest.query.filter_by(
         client_id=user_id,
@@ -260,14 +275,12 @@ def get_my_coach(user_id):
     GET /api/client/<user_id>/my-coach
     Returns the client's currently active coach or null if none.
     """
-    accepted = ClientRequest.query.filter_by(
-        client_id=user_id, status='accepted'
-    ).first()
+    hire = Hire.query.filter_by(user_id=user_id, status='active').first()
 
-    if not accepted:
+    if not hire:
         return jsonify({'coach': None}), 200
 
-    coach      = Coach.query.filter_by(coach_id=accepted.coach_id).first()
+    coach      = Coach.query.filter_by(coach_id=hire.coach_id).first()
     coach_user = User.query.filter_by(user_id=coach.user_id).first() if coach else None
 
     return jsonify({
@@ -277,7 +290,7 @@ def get_my_coach(user_id):
             'name':           f'{coach_user.first_name} {coach_user.last_name}' if coach_user else 'Unknown',
             'email':          coach_user.email if coach_user else None,
             'specialization': coach.specialization,
-            'since':          str(accepted.responded_at) if accepted.responded_at else str(accepted.created_at)
+            'since':          str(hire.created_at)
         }
     }), 200
 

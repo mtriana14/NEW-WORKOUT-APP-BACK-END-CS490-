@@ -46,7 +46,12 @@ def leave_review(coach_id):
     """
     user_id = int(get_jwt_identity())
 
-    hire = Hire.query.filter_by(user_id=user_id, coach_id=coach_id).first()
+    # URL param is coach's user_id (same convention as get_coach_reviews)
+    coach = Coach.query.filter_by(user_id=coach_id).first()
+    if not coach:
+        return jsonify({'error': 'Coach not found'}), 404
+
+    hire = Hire.query.filter_by(user_id=user_id, coach_id=coach.coach_id).first()
     if not hire:
         return jsonify({'error': 'You can only review a coach you have worked with'}), 403
 
@@ -60,7 +65,7 @@ def leave_review(coach_id):
 
     comment = data.get('comment', '')
 
-    existing = Review.query.filter_by(user_id=user_id, coach_id=coach_id).first()
+    existing = Review.query.filter_by(user_id=user_id, coach_id=coach.coach_id).first()
     if existing:
         existing.rating = rating
         existing.comment = comment
@@ -73,7 +78,7 @@ def leave_review(coach_id):
 
     review = Review(
         user_id=user_id,
-        coach_id=coach_id,
+        coach_id=coach.coach_id,
         rating=rating,
         comment=comment
     )
@@ -128,7 +133,11 @@ def delete_review(coach_id):
     """
     user_id = int(get_jwt_identity())
 
-    review = Review.query.filter_by(user_id=user_id, coach_id=coach_id).first()
+    coach = Coach.query.filter_by(user_id=coach_id).first()
+    if not coach:
+        return jsonify({'error': 'Coach not found'}), 404
+
+    review = Review.query.filter_by(user_id=user_id, coach_id=coach.coach_id).first()
     if not review:
         return jsonify({'error': 'Review not found'}), 404
 

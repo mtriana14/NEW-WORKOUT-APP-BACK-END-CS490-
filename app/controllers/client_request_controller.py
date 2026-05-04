@@ -105,9 +105,14 @@ def _serialize_dt(value):
     return value.isoformat() if hasattr(value, 'isoformat') else str(value)
 
 
-def _request_dict(req):
+def _request_dict(req, active_hire_client_ids=None):
     """Serialize a ClientRequest with client name included."""
     client = User.query.filter_by(user_id=req.client_id).first()
+    is_active = (
+        req.client_id in active_hire_client_ids
+        if active_hire_client_ids is not None
+        else (req.status == 'accepted')
+    )
     return {
         'request_id': req.request_id,
         'client_id': req.client_id,
@@ -116,6 +121,7 @@ def _request_dict(req):
         'coach_id': req.coach_id,
         'message': req.message,
         'status': req.status,
+        'is_active': is_active,
         'responded_at': _serialize_dt(req.responded_at),
         'created_at': _serialize_dt(req.created_at),
     }
@@ -158,7 +164,12 @@ def get_all_requests(coach_id):
     requests = ClientRequest.query.filter_by(coach_id=coach.coach_id).order_by(
         ClientRequest.created_at.desc()
     ).all()
-    return jsonify({'requests': [_request_dict(req) for req in requests]}), 200
+
+    # Build set of client_ids that have an active hire with this coach
+    active_hires = Hire.query.filter_by(coach_id=coach.coach_id, status='active').all()
+    active_hire_client_ids = {h.user_id for h in active_hires}
+
+    return jsonify({'requests': [_request_dict(req, active_hire_client_ids) for req in requests]}), 200
 
 
 def respond_to_request(request_id):
