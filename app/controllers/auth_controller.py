@@ -3,7 +3,6 @@ from app.config.db import db
 from app.models.user import User
 from app.models.coach import Coach
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
-from sqlalchemy.exc import DataError
 import bcrypt
 
 def register():
@@ -209,47 +208,30 @@ def update_user():
     user_id = get_jwt_identity()
     body = request.json
     if not body:
-        return jsonify({"Failed":"No body"}), 400
-    fields = [col.name for col in User.__table__.columns]
-    updates = {key: body[key] for key in fields if key in body}
+        return jsonify({"Failed": "No body"}), 400
+
+    fields = {col.name for col in User.__table__.columns}
+    updates = {key: body[key] for key in body if key in fields}
     if len(body) != len(updates):
-        return jsonify({"Failed":"Invalid fields present", "Fields":fields}), 400
+        return jsonify({"Failed": "Invalid fields present", "Fields": list(fields)}), 400
+
+    user = User.query.filter_by(user_id=user_id).first()
+    if not user:
+        return jsonify({"Failed": "User not found"}), 404
 
     if 'password' in updates:
         hashed = bcrypt.hashpw(updates['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         updates['password'] = hashed
 
-    query = ", ".join([f"{key} = %s" for key in updates])
-    values = list(updates.values())
-
-    conn = db.engine.raw_connection()
-    cursor = None
     try:
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            SELECT user_id FROM Users WHERE user_id=%s
-        """, (user_id,))
-
-        if not cursor.fetchone():
-            return jsonify({"Failed":"User not found"}), 404
-
-        cursor.execute(
-            f"UPDATE Users SET {query}, updated_at = NOW() WHERE user_id = %s",
-            values + [user_id]
-        )
-
-        conn.commit()
-        return jsonify({"Success":"User updated"}), 200
-
+        for key, value in updates.items():
+            setattr(user, key, value)
+        db.session.commit()
+        return jsonify({"Success": "User updated"}), 200
     except Exception as e:
-        conn.rollback()
+        db.session.rollback()
         print(e)
-        return jsonify({"Failed":"Some error occured", "Error:":f"{e}"}), 500
-    finally:
-        if cursor:
-            cursor.close()
-        conn.close()
+        return jsonify({"Failed": "Some error occured", "Error": str(e)}), 500
 
 @jwt_required()
 def update_coach():
@@ -282,49 +264,30 @@ def update_coach():
     user_id = get_jwt_identity()
     body = request.json
     if not body:
-        return jsonify({"Failed":"No body"}), 401
-    coach_to_update = User.query.filter_by(user_id = user_id).one()
-    if coach_to_update.role != "coach":
-        return jsonify({"Failed":"User is not a coach"}), 403
-    fields = [col.name for col in Coach.__table__.columns]
-    updates= {key: body[key] for key in fields if key in body}
+        return jsonify({"Failed": "No body"}), 400
+
+    user = User.query.filter_by(user_id=user_id).first()
+    if not user or user.role != "coach":
+        return jsonify({"Failed": "User is not a coach"}), 403
+
+    coach = Coach.query.filter_by(user_id=user_id).first()
+    if not coach:
+        return jsonify({"Failed": "Coach record not found"}), 404
+
+    fields = {col.name for col in Coach.__table__.columns}
+    updates = {key: body[key] for key in body if key in fields}
     if len(body) != len(updates):
-        return jsonify({"Failed":"Invalid fields present", "Fields":fields}), 400
-    query = ", ".join([f"{key} = %s" for key in updates])
-    values = list(updates.values())
-    
-    conn = db.engine.raw_connection()
-    cursor = None
+        return jsonify({"Failed": "Invalid fields present", "Fields": list(fields)}), 400
+
     try:
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            SELECT user_id FROM coaches WHERE user_id=%s
-        """, (user_id,))
-
-        if not cursor.fetchone():
-            return jsonify({"Failed":"User not found"}), 404
-        
-        cursor.execute(
-            f"UPDATE coaches SET {query}, updated_at = NOW() WHERE user_id = %s",
-            values + [user_id]
-        )
-
-        conn.commit()
-        return jsonify({"Success":"Coach Updated"}), 200
-
+        for key, value in updates.items():
+            setattr(coach, key, value)
+        db.session.commit()
+        return jsonify({"Success": "Coach Updated"}), 200
     except Exception as e:
-            conn.rollback()
-            print(e)
-            return jsonify({"Failed":"Some error occured", "Error:":f"{e}"}), 500
-    except DataError as e:
-            conn.rollback()
-            print(e)
-            return jsonify({"Failed":"Invalid data present"}), 400
-    finally:
-            if cursor:
-                cursor.close()
-            conn.close()
+        db.session.rollback()
+        print(e)
+        return jsonify({"Failed": "Some error occured", "Error": str(e)}), 500
 
 @jwt_required()
 def delete_user():
