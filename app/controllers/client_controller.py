@@ -3,21 +3,53 @@ from app.config.db import db
 from app.models.user import User
 from app.models.coach import Coach
 from app.models.client_request import ClientRequest
+from app.models.hire import Hire
 from app.models.WorkoutPlan import WorkoutPlan
 from app.models.meal_plan import MealPlan
 from app.models.coach_availability import CoachAvailability
- 
- 
+
+
 # ==================== COACHES ====================
- 
+
 def get_available_coaches():
+    """
+    Get all approved coaches
+    ---
+    tags:
+      - Coach Discovery
+    responses:
+      200:
+        description: A list of coaches available for browsing
+        schema:
+          type: object
+          properties:
+            coaches:
+              type: array
+              items:
+                type: object
+                properties:
+                  coach_id:
+                    type: integer
+                  name:
+                    type: string
+                  specialization:
+                    type: string
+                  experience_years:
+                    type: integer
+                  hourly_rate:
+                    type: number
+                  availability:
+                    type: array
+                    items:
+                      type: object
+    """
     """
     GET /api/client/coaches
     Returns all approved coaches for a client to browse.
     """
-    coaches = Coach.query.filter_by(status='approved').all()
+    coaches = Coach.query.filter(Coach.status.in_(['active', 'approved'])).all()
     result = []
- 
+
     for coach in coaches:
         user = User.query.filter_by(user_id=coach.user_id).first()
         availability = CoachAvailability.query.filter_by(coach_id=coach.coach_id).all()
@@ -29,7 +61,7 @@ def get_available_coaches():
             }
             for a in availability if a.is_available
         ]
- 
+
         result.append({
             'coach_id':         coach.coach_id,
             'user_id':          coach.user_id,
@@ -41,19 +73,38 @@ def get_available_coaches():
             'hourly_rate':      float(coach.hourly_rate) if coach.hourly_rate else None,
             'availability':     avail_list
         })
- 
+
     return jsonify({'coaches': result}), 200
- 
- 
+
+
 def get_coach_details(coach_id):
+    """
+    Get detailed profile of a specific coach
+    ---
+    tags:
+      - Coach Discovery
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Full coach profile details
+      404:
+        description: Coach not found or not approved
+    """
     """
     GET /api/client/coaches/<coach_id>
     Returns full profile of a single approved coach.
     """
-    coach = Coach.query.filter_by(coach_id=coach_id, status='approved').first()
+    coach = Coach.query.filter(
+        Coach.coach_id == coach_id,
+        Coach.status.in_(['active', 'approved'])
+    ).first()
     if not coach:
         return jsonify({'error': 'Coach not found'}), 404
- 
+
     user = User.query.filter_by(user_id=coach.user_id).first()
     availability = CoachAvailability.query.filter_by(coach_id=coach.coach_id).all()
     avail_list = [
@@ -64,7 +115,7 @@ def get_coach_details(coach_id):
         }
         for a in availability if a.is_available
     ]
- 
+
     return jsonify({
         'coach': {
             'coach_id':         coach.coach_id,
@@ -79,11 +130,43 @@ def get_coach_details(coach_id):
             'availability':     avail_list
         }
     }), 200
- 
- 
+
+
 # ==================== CLIENT REQUESTS ====================
- 
+
 def send_coach_request(user_id):
+    """
+    Send a coaching request to a coach
+    ---
+    tags:
+      - Coach Requests
+    parameters:
+      - in: path
+        name: user_id
+        type: integer
+        required: true
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - coach_id
+          properties:
+            coach_id:
+              type: integer
+            message:
+              type: string
+    responses:
+      201:
+        description: Request sent successfully
+      400:
+        description: coach_id is required
+      404:
+        description: Coach not found
+      409:
+        description: Pending request already exists
+    """
     """
     POST /api/client/<user_id>/requests
     Send a coaching request to a coach.
@@ -92,14 +175,25 @@ def send_coach_request(user_id):
     data = request.get_json() or {}
     coach_id = data.get('coach_id')
     message  = data.get('message', '')
- 
+
     if not coach_id:
         return jsonify({'error': 'coach_id is required'}), 400
- 
-    coach = Coach.query.filter_by(coach_id=coach_id, status='approved').first()
+
+    coach = Coach.query.filter(
+        Coach.coach_id == coach_id,
+        Coach.status.in_(['active', 'approved'])
+    ).first()
     if not coach:
         return jsonify({'error': 'Coach not found'}), 404
- 
+
+    active_hire = Hire.query.filter_by(
+        user_id=user_id,
+        coach_id=coach_id,
+        status='active'
+    ).first()
+    if active_hire:
+        return jsonify({'error': 'You are already in an active coaching relationship with this coach'}), 409
+
     existing = ClientRequest.query.filter_by(
         client_id=user_id,
         coach_id=coach_id,
@@ -107,7 +201,7 @@ def send_coach_request(user_id):
     ).first()
     if existing:
         return jsonify({'error': 'You already have a pending request with this coach'}), 409
- 
+
     client_request = ClientRequest(
         client_id=user_id,
         coach_id=coach_id,
@@ -116,25 +210,39 @@ def send_coach_request(user_id):
     )
     db.session.add(client_request)
     db.session.commit()
- 
+
     return jsonify({
         'message':    'Request sent successfully',
         'request_id': client_request.request_id
     }), 201
- 
- 
+
+
 def get_my_requests(user_id):
+    """
+    Get all coaching requests sent by the client
+    ---
+    tags:
+      - Coach Requests
+    parameters:
+      - in: path
+        name: user_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: List of sent requests and their statuses
+    """
     """
     GET /api/client/<user_id>/requests
     Returns all coaching requests sent by this client.
     """
     reqs = ClientRequest.query.filter_by(client_id=user_id).all()
     result = []
- 
+
     for req in reqs:
         coach      = Coach.query.filter_by(coach_id=req.coach_id).first()
         coach_user = User.query.filter_by(user_id=coach.user_id).first() if coach else None
- 
+
         result.append({
             'request_id':   req.request_id,
             'coach_id':     req.coach_id,
@@ -144,50 +252,73 @@ def get_my_requests(user_id):
             'created_at':   str(req.created_at),
             'responded_at': str(req.responded_at) if req.responded_at else None
         })
- 
+
     return jsonify({'requests': result}), 200
- 
- 
+
+
 def get_my_coach(user_id):
+    """
+    Get the client's currently active coach
+    ---
+    tags:
+      - Coach Discovery
+    parameters:
+      - in: path
+        name: user_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Active coach details or null
+    """
     """
     GET /api/client/<user_id>/my-coach
     Returns the client's currently active coach or null if none.
     """
-    accepted = ClientRequest.query.filter_by(
-        client_id=user_id, status='accepted'
-    ).first()
- 
-    if not accepted:
+    hire = Hire.query.filter_by(user_id=user_id, status='active').first()
+
+    if not hire:
         return jsonify({'coach': None}), 200
- 
-    coach      = Coach.query.filter_by(coach_id=accepted.coach_id).first()
+
+    coach      = Coach.query.filter_by(coach_id=hire.coach_id).first()
     coach_user = User.query.filter_by(user_id=coach.user_id).first() if coach else None
- 
+
     return jsonify({
         'coach': {
             'coach_id':       coach.coach_id,
+            'user_id':        coach.user_id,
             'name':           f'{coach_user.first_name} {coach_user.last_name}' if coach_user else 'Unknown',
             'email':          coach_user.email if coach_user else None,
             'specialization': coach.specialization,
-            'since':          str(accepted.responded_at) if accepted.responded_at else str(accepted.created_at)
+            'since':          str(hire.created_at)
         }
     }), 200
- 
- 
+
+
 # ==================== WORKOUT PLANS ====================
- 
+
 def get_my_workout_plans(user_id):
     """
-    GET /api/client/<user_id>/workout-plans
-    Returns all workout plans assigned to this client.
+    Get workout plans assigned to the client
+    ---
+    tags:
+      - Assigned Plans
+    parameters:
+      - in: path
+        name: user_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: List of workout plans
     """
     plans  = WorkoutPlan.query.filter_by(user_id=user_id).all()
     result = []
- 
+
     for plan in plans:
         coach      = Coach.query.filter_by(coach_id=plan.coach_id).first()
         coach_user = User.query.filter_by(user_id=coach.user_id).first() if coach else None
- 
+
         result.append({
             'plan_id':     plan.plan_id,
             'name':        plan.name,
@@ -197,24 +328,38 @@ def get_my_workout_plans(user_id):
             'created_at':  str(plan.created_at),
             'updated_at':  str(plan.updated_at)
         })
- 
+
     return jsonify({'workout_plans': result}), 200
- 
- 
+
+
 # ==================== MEAL PLANS ====================
- 
+
 def get_my_meal_plans(user_id):
+    """
+    Get meal plans assigned to the client
+    ---
+    tags:
+      - Assigned Plans
+    parameters:
+      - in: path
+        name: user_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: List of meal plans
+    """
     """
     GET /api/client/<user_id>/meal-plans
     Returns all meal plans assigned to this client.
     """
     plans  = MealPlan.query.filter_by(user_id=user_id).all()
     result = []
- 
+
     for plan in plans:
         coach      = Coach.query.filter_by(coach_id=plan.coach_id).first() if plan.coach_id else None
         coach_user = User.query.filter_by(user_id=coach.user_id).first() if coach else None
- 
+
         result.append({
             'meal_plan_id': plan.meal_plan_id,
             'name':         plan.name,
@@ -224,5 +369,5 @@ def get_my_meal_plans(user_id):
             'created_at':   str(plan.created_at),
             'updated_at':   str(plan.updated_at)
         })
- 
+
     return jsonify({'meal_plans': result}), 200

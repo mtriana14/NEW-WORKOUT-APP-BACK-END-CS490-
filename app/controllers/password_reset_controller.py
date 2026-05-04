@@ -4,8 +4,35 @@ from app.config.db import db
 from flask_jwt_extended import get_jwt_identity
 import bcrypt
 
-# The user forgets their password
 def forgot_password_reset():
+    """
+    Reset password by email (no token required)
+    ---
+    tags:
+      - Authentication
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - email
+            - password
+          properties:
+            email:
+              type: string
+            password:
+              type: string
+              description: The new password to set
+    responses:
+      200:
+        description: Password reset successfully
+      400:
+        description: Missing email or password
+      404:
+        description: No account with that email
+    """
     email = request.json.get('email')
     password = request.json.get('password')
     if not email or not password:
@@ -18,8 +45,34 @@ def forgot_password_reset():
     db.session.commit()
     return jsonify({"Success":f"Password reset for {email}"}), 200
 
-# The user simply wants to change thier password
 def reset_password():
+    """
+    Change password while logged in
+    ---
+    tags:
+      - Authentication
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - old_password
+            - new_password
+          properties:
+            old_password:
+              type: string
+            new_password:
+              type: string
+    responses:
+      200:
+        description: Password changed successfully
+      401:
+        description: Old password is incorrect
+    """
     user_id = get_jwt_identity()
     user = db.session.get(User, user_id)
     old_pass = request.json.get('old_password')

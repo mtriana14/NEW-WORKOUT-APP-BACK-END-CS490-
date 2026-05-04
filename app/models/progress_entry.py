@@ -3,9 +3,9 @@ from datetime import datetime
 
 
 class ProgressEntry(db.Model):
-    __tablename__ = 'ProgressEntries'
+    __tablename__ = 'progress_entries'
     entry_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     entry_date = db.Column(db.Date, nullable=False)
     weight = db.Column(db.Numeric(5, 2), nullable=True)
     workouts_completed = db.Column(db.Integer, default=0)

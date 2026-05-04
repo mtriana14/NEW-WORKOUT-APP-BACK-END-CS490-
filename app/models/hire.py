@@ -2,10 +2,10 @@ from app.config.db import db
 from datetime import datetime
 
 class Hire(db.Model):
-    __tablename__ = 'Hires'
+    __tablename__ = 'hires'
     hire_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=False)
-    coach_id = db.Column(db.Integer, db.ForeignKey('Coaches.coach_id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    coach_id = db.Column(db.Integer, db.ForeignKey('coaches.coach_id'), nullable=False)
     status = db.Column(db.Enum('active', 'completed', 'cancelled'), nullable=False, default='active')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

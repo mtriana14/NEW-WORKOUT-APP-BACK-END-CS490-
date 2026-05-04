@@ -10,6 +10,36 @@ from datetime import datetime
 
 
 def get_pending_registrations():
+    """
+    Retrieve all pending coach applications
+    ---
+    tags:
+      - Admin - Coach Applications
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: A list of pending registrations with applicant details
+        schema:
+          type: object
+          properties:
+            Registrations:
+              type: array
+              items:
+                type: object
+                properties:
+                  reg_id:
+                    type: integer
+                  applicant:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      email:
+                        type: string
+      500:
+        description: Internal server error
+    """
     try:
         pending = db.session.query(
             CoachRegistration, User
@@ -22,33 +52,45 @@ def get_pending_registrations():
         ).all()
 
         if not pending:
-            return jsonify({"Note": "No pending registrations", "registrations": []}), 200
+            return jsonify({"pending_coaches": []}), 200
 
         res = []
         for registration, user in pending:
             res.append({
-                'reg_id': registration.reg_id,
+                'coach_id': registration.reg_id,
                 'user_id': registration.user_id,
-                'applicant': {
-                    'name': f"{user.first_name} {user.last_name}",
-                    'email': user.email,
-                    'phone': user.phone
-                },
-                'qualifications': registration.qualifications,
-                'specialty': registration.specialty,
-                'document_links': registration.document_links,
-                'application_status': registration.application_status,
+                'name': f"{user.first_name} {user.last_name}",
+                'email': user.email,
+                'specialization': registration.specialty or '',
+                'certifications': registration.qualifications or '',
+                'experience_years': None,
+                'bio': None,
+                'cost': 0,
+                'hourly_rate': None,
+                'status': 'pending',
                 'created_at': registration.created_at.isoformat() if registration.created_at else None,
-                'updated_at': registration.updated_at.isoformat() if registration.updated_at else None
             })
 
-        return jsonify({'Registrations': res}), 200
+        return jsonify({'pending_coaches': res}), 200
     except Exception as e:
         print(e)
-        return jsonify({"Error": f"{e}"}), 500
+        return jsonify({"error": str(e)}), 500
 
 
 def get_all_registrations():
+    """
+    Retrieve history of all coach applications (approved, rejected, pending)
+    ---
+    tags:
+      - Admin - Coach Applications
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: A list of all registration records
+      500:
+        description: Internal server error
+    """
     try:
         regs = db.session.query(
             CoachRegistration, User
@@ -82,6 +124,45 @@ def get_all_registrations():
         return jsonify({'error': str(e)}), 500
     
 def process_coach_registration(reg_id):
+    """
+    Approve or reject a coach application
+    ---
+    tags:
+      - Admin - Coach Applications
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: reg_id
+        type: integer
+        required: true
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - action
+          properties:
+            action:
+              type: string
+              enum: [approved, rejected]
+            cost:
+              type: number
+              description: Set the coach's cost if approving
+            rejection_reason:
+              type: string
+              description: Required if action is 'rejected'
+    responses:
+      200:
+        description: Registration processed successfully
+      400:
+        description: Invalid action, missing reason, or coach already exists
+      404:
+        description: Registration not found
+      500:
+        description: Processing failure
+    """
     try:
         admin_id = get_jwt_identity()
         data = request.json

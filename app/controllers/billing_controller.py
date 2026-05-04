@@ -12,7 +12,35 @@ import uuid
 
 def get_saved_cards():
     """
-    Check saved payment methods of user 
+    Get all saved payment methods for the current user
+    ---
+    tags:
+      - Billing Management
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: A list of saved cards
+        schema:
+          type: object
+          properties:
+            cards:
+              type: array
+              items:
+                type: object
+                properties:
+                  card_id:
+                    type: integer
+                  last_four:
+                    type: string
+                  card_brand:
+                    type: string
+                  expiry_month:
+                    type: integer
+                  expiry_year:
+                    type: integer
+                  is_default:
+                    type: boolean
     """
     user_id = int(get_jwt_identity())
     cards = SavedBilling.query.filter_by(user_id=user_id).order_by(
@@ -36,7 +64,43 @@ def get_saved_cards():
 
 def add_saved_card():
     """
-    let user add a new billing method, can set it to default payment method
+    Add a new billing method
+    ---
+    tags:
+      - Billing Management
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - last_four
+            - expiry_month
+            - expiry_year
+          properties:
+            last_four:
+              type: string
+              example: "4242"
+            expiry_month:
+              type: integer
+              example: 12
+            expiry_year:
+              type: integer
+              example: 2028
+            card_brand:
+              type: string
+              example: "Visa"
+            is_default:
+              type: boolean
+              default: false
+    responses:
+      201:
+        description: Card saved successfully
+      400:
+        description: Missing required fields
     """
     user_id = int(get_jwt_identity())
     data = request.get_json() or {}
@@ -72,7 +136,22 @@ def add_saved_card():
 
 def delete_saved_card(card_id):
     """
-    Let user delete any saved payment methods if needed
+    Remove a saved payment method
+    ---
+    tags:
+      - Billing Management
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: card_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Card removed successfully
+      404:
+        description: Card not found
     """
     user_id = int(get_jwt_identity())
 
@@ -87,8 +166,34 @@ def delete_saved_card(card_id):
 
 def pay_with_saved_card(coach_id):
     """
-    pay a subscription with a coach with a saved card, this is after client already
-    subscribed, this would be for recurring payments or paying it manually using a stored payment method 
+    Pay coach subscription using a saved card
+    ---
+    tags:
+      - Billing Management
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - card_id
+          properties:
+            card_id:
+              type: integer
+    responses:
+      201:
+        description: Payment successful
+      400:
+        description: No active subscription or hire found
+      404:
+        description: Saved card not found
     """
     user_id = int(get_jwt_identity())
     data    = request.get_json() or {}
@@ -97,24 +202,20 @@ def pay_with_saved_card(coach_id):
     if not card_id:
         return jsonify({'error': 'card_id is required'}), 400
 
-    # Verify card belongs to user
     card = SavedBilling.query.filter_by(card_id=card_id, user_id=user_id).first()
     if not card:
         return jsonify({'error': 'Saved card not found'}), 404
 
-    # Verify active hire
     hire = Hire.query.filter_by(user_id=user_id, coach_id=coach_id, status='active').first()
     if not hire:
         return jsonify({'error': 'No active coaching relationship found with this coach'}), 400
 
-    # Verify active subscription
     subscription = Subscription.query.filter_by(
         user_id=user_id, coach_id=coach_id, status='active'
     ).first()
     if not subscription:
         return jsonify({'error': 'No active subscription found with this coach'}), 400
 
-    # Create payment record
     payment = Payment(
         client_id           = user_id,
         coach_id            = coach_id,
@@ -130,7 +231,6 @@ def pay_with_saved_card(coach_id):
     )
     db.session.add(payment)
 
-    # Advance next billing date by one month
     nb = subscription.next_billing or date.today()
     next_month = nb.month % 12 + 1
     next_year  = nb.year + (1 if nb.month == 12 else 0)

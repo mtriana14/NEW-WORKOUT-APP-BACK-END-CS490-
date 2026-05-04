@@ -11,7 +11,51 @@ from datetime import date, datetime
 import uuid
 
 def subscribe_to_coach(coach_id):
-    """Subscribe to a coach - create subscription and process payment."""
+    """
+    Subscribe to a coach and process payment
+    ---
+    tags:
+      - Subscriptions
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            card_id:
+              type: integer
+              description: ID of a saved card (omit to use new card)
+            last_four:
+              type: string
+              description: Last 4 digits of new card
+            card_brand:
+              type: string
+            expiry_month:
+              type: integer
+            expiry_year:
+              type: integer
+            save_card:
+              type: boolean
+            plan_type:
+              type: string
+              default: Monthly
+    responses:
+      201:
+        description: Subscribed successfully
+      400:
+        description: Missing card details or no active coaching request
+      404:
+        description: Coach or saved card not found
+      409:
+        description: Already subscribed to this coach
+    """
     user_id = int(get_jwt_identity())
 
     # Check there is an active hire with this coach

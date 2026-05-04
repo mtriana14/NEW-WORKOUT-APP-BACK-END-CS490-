@@ -8,9 +8,50 @@ from datetime import datetime
 
 
 def leave_review(coach_id):
+    """
+    Submit or update a review for a coach
+    ---
+    tags:
+      - Reviews
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - rating
+          properties:
+            rating:
+              type: integer
+              minimum: 1
+              maximum: 5
+            comment:
+              type: string
+    responses:
+      200:
+        description: Review updated
+      201:
+        description: Review submitted
+      400:
+        description: Missing or invalid rating
+      403:
+        description: You have not worked with this coach
+    """
     user_id = int(get_jwt_identity())
 
-    hire = Hire.query.filter_by(user_id=user_id, coach_id=coach_id).first()
+    # URL param is coach's user_id (same convention as get_coach_reviews)
+    coach = Coach.query.filter_by(user_id=coach_id).first()
+    if not coach:
+        return jsonify({'error': 'Coach not found'}), 404
+
+    hire = Hire.query.filter_by(user_id=user_id, coach_id=coach.coach_id).first()
     if not hire:
         return jsonify({'error': 'You can only review a coach you have worked with'}), 403
 
@@ -24,7 +65,7 @@ def leave_review(coach_id):
 
     comment = data.get('comment', '')
 
-    existing = Review.query.filter_by(user_id=user_id, coach_id=coach_id).first()
+    existing = Review.query.filter_by(user_id=user_id, coach_id=coach.coach_id).first()
     if existing:
         existing.rating = rating
         existing.comment = comment
@@ -37,7 +78,7 @@ def leave_review(coach_id):
 
     review = Review(
         user_id=user_id,
-        coach_id=coach_id,
+        coach_id=coach.coach_id,
         rating=rating,
         comment=comment
     )
@@ -51,15 +92,17 @@ def leave_review(coach_id):
 
 
 def get_coach_reviews(coach_id):
-    coach = Coach.query.get(coach_id)
+    """
+    Get all reviews for a coach.
+    The coach_id URL param is the coach's user_id (matches profile page URL convention).
+    """
+    coach = Coach.query.filter_by(user_id=coach_id).first()
     if not coach:
-        return jsonify({'error': 'Coach not found'}), 404
+        return jsonify({'coach_id': coach_id, 'avg_rating': None, 'total': 0, 'reviews': []}), 200
 
-    reviews = Review.query.filter_by(coach_id=coach_id).order_by(Review.created_at.desc()).all()
+    reviews = Review.query.filter_by(coach_id=coach.coach_id).order_by(Review.created_at.desc()).all()
 
-    avg_rating = None
-    if reviews:
-        avg_rating = round(sum(r.rating for r in reviews) / len(reviews), 2)
+    avg_rating = round(sum(r.rating for r in reviews) / len(reviews), 2) if reviews else None
 
     return jsonify({
         'coach_id':   coach_id,
@@ -70,9 +113,31 @@ def get_coach_reviews(coach_id):
 
 
 def delete_review(coach_id):
+    """
+    Delete your review for a coach
+    ---
+    tags:
+      - Reviews
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Review deleted
+      404:
+        description: Review not found
+    """
     user_id = int(get_jwt_identity())
 
-    review = Review.query.filter_by(user_id=user_id, coach_id=coach_id).first()
+    coach = Coach.query.filter_by(user_id=coach_id).first()
+    if not coach:
+        return jsonify({'error': 'Coach not found'}), 404
+
+    review = Review.query.filter_by(user_id=user_id, coach_id=coach.coach_id).first()
     if not review:
         return jsonify({'error': 'Review not found'}), 404
 

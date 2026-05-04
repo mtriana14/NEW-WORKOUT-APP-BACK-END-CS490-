@@ -2,6 +2,7 @@ from flask import request, jsonify
 from app.config.db import db
 from app.models.client_request import ClientRequest
 from app.models.coach import Coach
+from app.models.user import User
 from app.models.hire import Hire
 from app.models.notification import Notification
 from flask_jwt_extended import get_jwt_identity
@@ -9,6 +10,37 @@ from datetime import datetime
 
 
 def send_request(coach_id):
+    """
+    Client sends a coaching request to a coach
+    ---
+    tags:
+      - Coach Hiring
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "Hi, I'm looking for a weight loss program."
+    responses:
+      201:
+        description: Coaching request sent successfully
+      400:
+        description: Coach not available or missing message
+      404:
+        description: Coach not found
+      409:
+        description: Pending request or active hire already exists
+    """
     """Client sends a coaching request to a coach."""
     user_id = int(get_jwt_identity())
 
@@ -67,27 +99,111 @@ def send_request(coach_id):
 
 
 
+def _serialize_dt(value):
+    if value is None:
+        return None
+    return value.isoformat() if hasattr(value, 'isoformat') else str(value)
+
+
+def _request_dict(req, active_hire_client_ids=None):
+    """Serialize a ClientRequest with client name included."""
+    client = User.query.filter_by(user_id=req.client_id).first()
+    is_active = (
+        req.client_id in active_hire_client_ids
+        if active_hire_client_ids is not None
+        else (req.status == 'accepted')
+    )
+    return {
+        'request_id': req.request_id,
+        'client_id': req.client_id,
+        'client_name': f'{client.first_name} {client.last_name}' if client else None,
+        'client_email': client.email if client else None,
+        'coach_id': req.coach_id,
+        'message': req.message,
+        'status': req.status,
+        'is_active': is_active,
+        'responded_at': _serialize_dt(req.responded_at),
+        'created_at': _serialize_dt(req.created_at),
+    }
+
+
 def get_pending_requests(coach_id):
+    """
+    Get all pending client requests for a coach
+    ---
+    tags:
+      - Coach Hiring
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: List of pending requests
+      404:
+        description: Coach not found
+    """
     """Get all pending client requests for a coach."""
-    coach = Coach.query.filter_by(coach_id=coach_id).first()
+    coach = Coach.query.filter_by(user_id=coach_id).first()
     if not coach:
         return jsonify({'error': 'Coach not found'}), 404
 
-    requests = ClientRequest.query.filter_by(coach_id=coach_id, status='pending').all()
-    result = [
-        {
-            'id': req.request_id,
-            'client_id': req.client_id,
-            'message': req.message,
-            'created_at': str(req.created_at)
-        }
-        for req in requests
-    ]
+    requests = ClientRequest.query.filter_by(coach_id=coach.coach_id, status='pending').all()
+    return jsonify({'requests': [_request_dict(req) for req in requests]}), 200
 
-    return jsonify({'requests': result}), 200
+
+def get_all_requests(coach_id):
+    """Get all client requests (any status) for a coach. URL param is user_id."""
+    coach = Coach.query.filter_by(user_id=coach_id).first()
+    if not coach:
+        return jsonify({'error': 'Coach not found'}), 404
+
+    requests = ClientRequest.query.filter_by(coach_id=coach.coach_id).order_by(
+        ClientRequest.created_at.desc()
+    ).all()
+
+    # Build set of client_ids that have an active hire with this coach
+    active_hires = Hire.query.filter_by(coach_id=coach.coach_id, status='active').all()
+    active_hire_client_ids = {h.user_id for h in active_hires}
+
+    return jsonify({'requests': [_request_dict(req, active_hire_client_ids) for req in requests]}), 200
 
 
 def respond_to_request(request_id):
+    """
+    Accept or decline a client request
+    ---
+    tags:
+      - Coach Hiring
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: request_id
+        type: integer
+        required: true
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - action
+          properties:
+            action:
+              type: string
+              enum: [accepted, declined]
+    responses:
+      200:
+        description: Request status updated successfully
+      400:
+        description: Invalid action provided
+      404:
+        description: Request not found or already processed
+    """
     """Accept or decline a client request."""
     data = request.get_json()
     action = data.get('action')  # 'accepted' or 'declined'
