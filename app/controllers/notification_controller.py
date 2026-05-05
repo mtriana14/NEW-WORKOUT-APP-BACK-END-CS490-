@@ -5,11 +5,6 @@ from app.models.user import User
 
 
 def get_all_notifications():
-    """
-    GET /api/admin/notifications
-    Admin-only — returns all notifications across all users
-    with basic user info attached.
-    """
     notifications = Notification.query.order_by(
         Notification.created_at.desc()
     ).all()
@@ -22,19 +17,18 @@ def get_all_notifications():
 
     result = [
         {
-            'id':             n.notification_id,
+            'id':              n.notification_id,
             'notification_id': n.notification_id,
-            'user_id':        n.user_id,
-            'user_name':      users.get(n.user_id, 'Unknown'),
-            'title':          n.title,
-            'message':        n.message,
-            'type':           n.type,
-            'is_read':        n.is_read,
-            'created_at':     str(n.created_at)
+            'user_id':         n.user_id,
+            'user_name':       users.get(n.user_id, 'Unknown'),
+            'title':           n.title,
+            'message':         n.message,
+            'type':            n.type,
+            'is_read':         n.is_read,
+            'created_at':      str(n.created_at)
         }
         for n in notifications
     ]
-
     return jsonify({'notifications': result}), 200
 
 
@@ -45,11 +39,11 @@ def get_user_notifications(user_id):
 
     result = [
         {
-            'id':    n.notification_id,
-            'title': n.title,
-            'message': n.message,
-            'type':  n.type,
-            'is_read': n.is_read,
+            'id':         n.notification_id,
+            'title':      n.title,
+            'message':    n.message,
+            'type':       n.type,
+            'is_read':    n.is_read,
             'created_at': str(n.created_at)
         }
         for n in notifications
@@ -64,17 +58,17 @@ def get_unread_notifications(user_id):
 
     result = [
         {
-            'id':    n.notification_id,
-            'title': n.title,
-            'message': n.message,
-            'type':  n.type,
+            'id':         n.notification_id,
+            'title':      n.title,
+            'message':    n.message,
+            'type':       n.type,
             'created_at': str(n.created_at)
         }
         for n in notifications
     ]
     return jsonify({
         'notifications': result,
-        'unread_count': len(result)
+        'unread_count':  len(result)
     }), 200
 
 
@@ -82,6 +76,7 @@ def mark_as_read(notification_id):
     notification = Notification.query.filter_by(
         notification_id=notification_id
     ).first()
+
     if not notification:
         return jsonify({'error': 'Notification not found'}), 404
 
@@ -100,6 +95,7 @@ def mark_all_as_read(user_id):
 
 def send_notification():
     data = request.get_json()
+
     if not data.get('user_id') or not data.get('title') or not data.get('message'):
         return jsonify({'error': 'user_id, title and message are required'}), 400
 
@@ -113,7 +109,7 @@ def send_notification():
     db.session.commit()
     return jsonify({
         'message': 'Notification sent successfully',
-        'id': notification.notification_id
+        'id':      notification.notification_id
     }), 201
 
 
@@ -121,6 +117,7 @@ def delete_notification(notification_id):
     notification = Notification.query.filter_by(
         notification_id=notification_id
     ).first()
+
     if not notification:
         return jsonify({'error': 'Notification not found'}), 404
 
