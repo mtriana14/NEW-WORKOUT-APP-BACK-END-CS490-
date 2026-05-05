@@ -157,6 +157,8 @@ def get_all_fitnessgoals():
         user_id = get_jwt_identity()
         query = FitnessGoal.query.filter_by(user_id = user_id)
         goals = query.order_by(FitnessGoal.created_at.desc()).all()
+        if not goals:
+            return jsonify({"Failed": "No fitness goals found"}), 404
         return jsonify({"Goals":[goal.to_dict() for goal in goals]}), 200
     except Exception as e:
         print(e)
