@@ -7,6 +7,7 @@ from app.models.hire import Hire
 from app.models.WorkoutPlan import WorkoutPlan
 from app.models.meal_plan import MealPlan
 from app.models.coach_availability import CoachAvailability
+from app.models.saved_billing import SavedBilling
 
 
 # ==================== COACHES ====================
@@ -295,6 +296,51 @@ def get_my_coach(user_id):
     }), 200
 
 
+def get_my_coaches():
+    """
+    Get coaches this client has a hire relationship with.
+    ---
+    tags:
+      - Coach Discovery
+    parameters:
+      - in: query
+        name: active_only
+        type: boolean
+        description: If true, return only coaches from active hires
+    responses:
+      200:
+        description: List of coaches the client has hired
+    """
+    from flask_jwt_extended import get_jwt_identity
+    user_id = int(get_jwt_identity())
+    active_only = request.args.get('active_only', 'false').lower() == 'true'
+
+    if active_only:
+        hires = Hire.query.filter_by(user_id=user_id, status='active').all()
+    else:
+        hires = Hire.query.filter_by(user_id=user_id).all()
+
+    coaches = []
+    seen = set()
+    for hire in hires:
+        if hire.coach_id in seen:
+            continue
+        seen.add(hire.coach_id)
+        coach = Coach.query.filter_by(coach_id=hire.coach_id).first()
+        if not coach:
+            continue
+        user = User.query.filter_by(user_id=coach.user_id).first()
+        coaches.append({
+            'coach_id':       coach.coach_id,
+            'user_id':        coach.user_id,
+            'name':           f'{user.first_name} {user.last_name}' if user else 'Unknown',
+            'specialization': coach.specialization,
+            'hourly_rate':    float(coach.hourly_rate) if coach.hourly_rate else None,
+        })
+
+    return jsonify({'coaches': coaches}), 200
+
+
 # ==================== WORKOUT PLANS ====================
 
 def get_my_workout_plans(user_id):
@@ -371,3 +417,30 @@ def get_my_meal_plans(user_id):
         })
 
     return jsonify({'meal_plans': result}), 200
+
+
+# ==================== SAVED CARDS ====================
+
+def get_saved_cards():
+    """
+    GET /api/client/saved-cards
+    Returns all saved payment cards for the logged-in client.
+    """
+    from flask_jwt_extended import get_jwt_identity
+    user_id = int(get_jwt_identity())
+
+    cards = SavedBilling.query.filter_by(user_id=user_id).order_by(SavedBilling.created_at.desc()).all()
+
+    return jsonify({
+        'cards': [
+            {
+                'card_id':      c.card_id,
+                'last_four':    c.last_four,
+                'card_brand':   c.card_brand,
+                'expiry_month': c.expiry_month,
+                'expiry_year':  c.expiry_year,
+                'is_default':   c.is_default,
+            }
+            for c in cards
+        ]
+    }), 200

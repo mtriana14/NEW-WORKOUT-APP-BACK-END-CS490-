@@ -5,6 +5,7 @@ from app.models.coach import Coach
 from app.models.user import User
 from app.models.hire import Hire
 from app.models.notification import Notification
+from app.models.fitnessgoals import FitnessGoal
 from flask_jwt_extended import get_jwt_identity
 from datetime import datetime
 
@@ -106,13 +107,16 @@ def _serialize_dt(value):
 
 
 def _request_dict(req, active_hire_client_ids=None):
-    """Serialize a ClientRequest with client name included."""
+    """Serialize a ClientRequest with client name and fitness goal included."""
     client = User.query.filter_by(user_id=req.client_id).first()
     is_active = (
         req.client_id in active_hire_client_ids
         if active_hire_client_ids is not None
         else (req.status == 'accepted')
     )
+    active_goal = FitnessGoal.query.filter_by(
+        user_id=req.client_id, status='active'
+    ).order_by(FitnessGoal.created_at.desc()).first()
     return {
         'request_id': req.request_id,
         'client_id': req.client_id,
@@ -122,6 +126,7 @@ def _request_dict(req, active_hire_client_ids=None):
         'message': req.message,
         'status': req.status,
         'is_active': is_active,
+        'fitness_goal': active_goal.goal_type if active_goal else None,
         'responded_at': _serialize_dt(req.responded_at),
         'created_at': _serialize_dt(req.created_at),
     }

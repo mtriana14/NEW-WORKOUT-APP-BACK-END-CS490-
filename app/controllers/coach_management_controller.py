@@ -229,16 +229,18 @@ def approve_coach(coach_id):
     return jsonify({'message': 'Coach approved successfully'}), 200
 
 
-def reject_coach(coach_id):
+def reject_coach(coach_id, reason=None):
     """Set a coach's status to rejected."""
     coach = Coach.query.filter_by(coach_id=coach_id).first()
     if not coach:
         return jsonify({'error': 'Coach not found'}), 404
     coach.status = 'rejected'
+    base_msg = 'Your coach account application has been declined.'
+    message = f'{base_msg} Reason: {reason}' if reason else f'{base_msg} Please contact support for more information.'
     notification = Notification(
         user_id=coach.user_id,
-        title='Coach Account Rejected',
-        message='Your coach account application has been rejected. Please contact support.',
+        title='Coach application declined',
+        message=message,
         type='system'
     )
     db.session.add(notification)
@@ -290,6 +292,6 @@ def update_coach_status(coach_id):
     elif status in ('approved', 'approve'):
         return approve_coach(coach_id)
     elif status in ('rejected', 'reject'):
-        return reject_coach(coach_id)
+        return reject_coach(coach_id, reason=data.get('reason'))
     else:
         return jsonify({'error': 'Invalid status. Must be suspend, reactivate, disable, approved, or rejected'}), 400
