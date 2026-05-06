@@ -30,7 +30,7 @@ def create_app():
     from app.routes.progress_routes import progress_bp
     app.register_blueprint(progress_bp, url_prefix='/api')
     from app.routes.chat_routes import chat_routes_bp
-    app.register_blueprint(chat_routes_bp, url_prefix='/api')
+    app.register_blueprint(chat_routes_bp, url_prefix='/api') 
     from app.routes.auth_routes import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/api')
     from app.routes.coach_availability_routes import coach_availability_bp
