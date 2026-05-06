@@ -14,7 +14,7 @@ class Hire(db.Model):
     coach = db.relationship('Coach', backref='hires')
 
     def __repr__(self):
-        return f'<Hire {self.user_id} -> {self.coach_id}>'
+        return f'<hire {self.user_id} -> {self.coach_id}>'
     
     def to_dict(self):
         return {

@@ -12,14 +12,11 @@ class ActivityLog(db.Model):
     sets_completed   = db.Column(db.Integer, nullable=True)
     reps_completed   = db.Column(db.Integer, nullable=True)
     weight_used      = db.Column(db.Numeric(6, 2), nullable=True)
-    # Cardio fields
     distance         = db.Column(db.Numeric(8, 2), nullable=True)
     duration_minutes = db.Column(db.Integer, nullable=True)
     cardio_type      = db.Column(db.String(100), nullable=True)
-    # Steps / calories fields
     step_count       = db.Column(db.Integer, nullable=True)
     calorie_intake   = db.Column(db.Integer, nullable=True)
-    # Common
     log_date         = db.Column(db.Date, nullable=False)
     notes            = db.Column(db.Text, nullable=True)
     is_deleted       = db.Column(db.Boolean, nullable=False, default=False)

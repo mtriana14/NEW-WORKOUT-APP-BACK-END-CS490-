@@ -1,5 +1,5 @@
 from flask import Blueprint
-from app.controllers.progress_controller import get_client_progress , save_client_progress
+from app.controllers.progress_user_controller import get_client_progress, save_client_progress
 from app.middleware.auth_middleware import login_required
 
 progress_bp = Blueprint('progress', __name__)

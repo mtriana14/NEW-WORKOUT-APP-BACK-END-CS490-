@@ -18,6 +18,7 @@ def _calculate_summary(entries):
 
     total_workouts = sum(e.workouts_completed for e in entries)
 
+    # Streak
     today = date.today()
     streak = 0
     check = today
@@ -26,12 +27,15 @@ def _calculate_summary(entries):
         streak += 1
         check -= timedelta(days=1)
 
+    # Weekly calories
     week_ago = today - timedelta(days=7)
     weekly_calories = sum(e.calories_burned for e in entries if e.entry_date >= week_ago)
 
+    # Goals met
     goals_met = sum(1 for e in entries if e.goal_completed)
-    goals_met_pct = round((goals_met / len(entries)) * 100)
+    goals_met_pct = round((goals_met / len(entries)) * 100) if entries else 0
 
+    # Weight
     weights = [e for e in entries if e.weight is not None]
     latest_weight = float(weights[0].weight) if weights else None
     weight_change = None
@@ -50,6 +54,9 @@ def _calculate_summary(entries):
 
 
 def get_client_progress(user_id):
+    """
+    GET /api/client/<user_id>/progress
+    """
     entries = ProgressEntry.query.filter_by(user_id=user_id).order_by(ProgressEntry.entry_date.desc()).all()
     return jsonify({
         'entries': [e.to_dict() for e in entries],
@@ -58,6 +65,10 @@ def get_client_progress(user_id):
 
 
 def save_client_progress(user_id):
+    """
+    POST /api/client/<user_id>/progress
+    Creates or updates the entry for a given date.
+    """
     data = request.get_json() or {}
     entry_date_str = data.get('entry_date')
 
@@ -66,19 +77,21 @@ def save_client_progress(user_id):
 
     entry_date = date.fromisoformat(entry_date_str)
 
+    # Upsert — update if exists, create if not
     entry = ProgressEntry.query.filter_by(user_id=user_id, entry_date=entry_date).first()
     if not entry:
         entry = ProgressEntry(user_id=user_id, entry_date=entry_date)
         db.session.add(entry)
 
-    entry.weight             = data.get('weight')
-    entry.workouts_completed = data.get('workouts_completed', 0)
-    entry.calories_burned    = data.get('calories_burned', 0)
-    entry.goal_completed     = data.get('goal_completed', False)
-    entry.notes              = data.get('notes', '')
+    entry.weight              = data.get('weight')
+    entry.workouts_completed  = data.get('workouts_completed', 0)
+    entry.calories_burned     = data.get('calories_burned', 0)
+    entry.goal_completed      = data.get('goal_completed', False)
+    entry.notes               = data.get('notes', '')
     db.session.commit()
 
     all_entries = ProgressEntry.query.filter_by(user_id=user_id).order_by(ProgressEntry.entry_date.desc()).all()
+
     return jsonify({
         'message': 'Progress saved successfully',
         'entry':   entry.to_dict(),

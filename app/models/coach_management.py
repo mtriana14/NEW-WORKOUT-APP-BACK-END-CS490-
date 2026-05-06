@@ -9,7 +9,7 @@ class CoachManagement(db.Model):
     action_type = db.Column(db.Enum('suspend', 'reactivate', 'disable'), nullable=False)
     reason = db.Column(db.Text, nullable=True)
     suspension_duration = db.Column(db.String(50), nullable=True)
-    action_date = db.Column(db.DateTime, default=datetime.utcnow)
+    action_date         = db.Column(db.DateTime, default=datetime.utcnow)
 
     coach = db.relationship('Coach', backref='management_actions')
     admin = db.relationship('User', backref='coach_management_actions')

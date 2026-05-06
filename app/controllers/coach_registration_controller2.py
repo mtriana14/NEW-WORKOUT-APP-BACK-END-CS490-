@@ -121,8 +121,34 @@ def get_all_registrations():
         return jsonify({'Registrations': res}), 200
     except Exception as e:
         print(e)
-        return jsonify({'error': str(e)}), 500
-    
+        return jsonify({"Error": f"{e}"}), 500
+
+
+def get_all_registrations():
+    regs = db.session.query(
+        CoachRegistration, User
+    ).join(
+        User, CoachRegistration.user_id == User.user_id
+    ).order_by(
+        CoachRegistration.created_at.desc()
+    ).all()
+
+    result = []
+    for registration, user in regs:
+        result.append({
+            'coach_id':       registration.reg_id,
+            'name':           f'{user.first_name} {user.last_name}',
+            'email':          user.email,
+            'specialization': registration.specialty,
+            'status':         registration.application_status,
+            'qualifications': registration.qualifications,
+            'document_links': registration.document_links,
+            'created_at':     registration.created_at.isoformat() if registration.created_at else None,
+        })
+
+    return jsonify(result), 200
+
+
 def process_coach_registration(reg_id):
     """
     Approve or reject a coach application

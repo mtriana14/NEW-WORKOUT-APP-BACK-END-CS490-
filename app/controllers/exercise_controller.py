@@ -2,7 +2,6 @@ from flask import request, jsonify
 from app.config.db import db
 from app.models.exercise import Exercise
 
-
 def _exercise_dict(ex):
     return {
         'id': ex.e_id,
@@ -18,96 +17,33 @@ def _exercise_dict(ex):
         'created_at': ex.created_at.isoformat() if ex.created_at else None,
         'updated_at': ex.updated_at.isoformat() if ex.updated_at else None,
     }
-
-
 def get_all_exercises():
-    """
-    Get all active exercises
-    ---
-    tags:
-      - Exercises
-    security:
-      - Bearer: []
-    responses:
-      200:
-        description: List of exercises
-    """
     exercises = Exercise.query.filter_by(is_active=True).all()
-    return jsonify({'exercises': [_exercise_dict(ex) for ex in exercises]}), 200
-
-
-def get_exercise_by_id(exercise_id):
-    """
-    Get a single exercise by ID
-    ---
-    tags:
-      - Exercises
-    security:
-      - Bearer: []
-    parameters:
-      - in: path
-        name: exercise_id
-        type: integer
-        required: true
-    responses:
-      200:
-        description: Exercise details
-      404:
-        description: Exercise not found
-    """
-    exercise = Exercise.query.filter_by(e_id=exercise_id, is_active=True).first()
-    if not exercise:
-        return jsonify({'error': 'Exercise not found'}), 404
-    return jsonify({'exercise': _exercise_dict(exercise)}), 200
+    result = [
+        {
+            'id':             ex.e_id,
+            'name':           ex.name,
+            'description':    ex.description,
+            'muscle_group':   ex.muscle_group,
+            'equipment_type': ex.equipment_type,
+            'difficulty':     ex.difficulty,
+            'instructions':   ex.instructions,
+            'video_url':      ex.video_url,
+            'created_at':     str(ex.created_at)
+        }
+        for ex in exercises
+    ]
+    return jsonify({'exercises': result}), 200
 
 
 def create_exercise():
-    """
-    Create a new exercise (admin)
-    ---
-    tags:
-      - Exercises
-    security:
-      - Bearer: []
-    parameters:
-      - in: body
-        name: body
-        required: true
-        schema:
-          type: object
-          required:
-            - name
-            - muscle_group
-          properties:
-            name:
-              type: string
-            description:
-              type: string
-            muscle_group:
-              type: string
-            equipment_type:
-              type: string
-            difficulty:
-              type: string
-              enum: [beginner, intermediate, advanced]
-            instructions:
-              type: string
-            video_url:
-              type: string
-    responses:
-      201:
-        description: Exercise created
-      400:
-        description: Missing required fields
-      409:
-        description: Exercise name already exists
-    """
     data = request.get_json() or {}
 
     if not data.get('name') or not data.get('muscle_group'):
         return jsonify({'error': 'Name and muscle group are required'}), 400
 
-    if Exercise.query.filter_by(name=data.get('name')).first():
+    existing = Exercise.query.filter_by(name=data.get('name')).first()
+    if existing:
         return jsonify({'error': 'Exercise with this name already exists'}), 409
 
     exercise = Exercise(
@@ -122,90 +58,29 @@ def create_exercise():
     )
     db.session.add(exercise)
     db.session.commit()
-    return jsonify({'message': 'Exercise created successfully', 'exercise': _exercise_dict(exercise)}), 201
+    return jsonify({'message': 'Exercise created successfully', 'id': exercise.e_id}), 201
 
 
 def update_exercise(exercise_id):
-    """
-    Update an exercise (admin)
-    ---
-    tags:
-      - Exercises
-    security:
-      - Bearer: []
-    parameters:
-      - in: path
-        name: exercise_id
-        type: integer
-        required: true
-      - in: body
-        name: body
-        schema:
-          type: object
-          properties:
-            name:
-              type: string
-            description:
-              type: string
-            muscle_group:
-              type: string
-            equipment_type:
-              type: string
-            difficulty:
-              type: string
-            instructions:
-              type: string
-            video_url:
-              type: string
-    responses:
-      200:
-        description: Exercise updated
-      404:
-        description: Exercise not found
-    """
     exercise = Exercise.query.filter_by(e_id=exercise_id, is_active=True).first()
     if not exercise:
         return jsonify({'error': 'Exercise not found'}), 404
 
     data = request.get_json() or {}
-    if data.get('name'):
-        exercise.name = data['name']
-    if data.get('description') is not None:
-        exercise.description = data['description']
-    if data.get('muscle_group'):
-        exercise.muscle_group = data['muscle_group']
-    if data.get('equipment_type'):
-        exercise.equipment_type = data['equipment_type']
-    if data.get('difficulty'):
-        exercise.difficulty = data['difficulty']
-    if data.get('instructions') is not None:
-        exercise.instructions = data['instructions']
-    if data.get('video_url') is not None:
-        exercise.video_url = data['video_url']
+
+    if data.get('name'):           exercise.name           = data['name']
+    if data.get('description'):    exercise.description    = data['description']
+    if data.get('muscle_group'):   exercise.muscle_group   = data['muscle_group']
+    if data.get('equipment_type'): exercise.equipment_type = data['equipment_type']
+    if data.get('difficulty'):     exercise.difficulty     = data['difficulty']
+    if data.get('instructions'):   exercise.instructions   = data['instructions']
+    if data.get('video_url'):      exercise.video_url      = data['video_url']
 
     db.session.commit()
     return jsonify({'message': 'Exercise updated successfully', 'exercise': _exercise_dict(exercise)}), 200
 
 
 def delete_exercise(exercise_id):
-    """
-    Soft-delete an exercise (admin)
-    ---
-    tags:
-      - Exercises
-    security:
-      - Bearer: []
-    parameters:
-      - in: path
-        name: exercise_id
-        type: integer
-        required: true
-    responses:
-      200:
-        description: Exercise deleted
-      404:
-        description: Exercise not found
-    """
     exercise = Exercise.query.filter_by(e_id=exercise_id, is_active=True).first()
     if not exercise:
         return jsonify({'error': 'Exercise not found'}), 404
@@ -233,7 +108,30 @@ _COMMON_EXERCISES = [
     {'name': 'Russian Twist', 'muscle_group': 'core', 'equipment_type': 'bodyweight', 'difficulty': 'beginner', 'description': 'A rotational core exercise.', 'instructions': 'Sit with knees bent and feet lifted, rotate torso side to side tapping the floor.'},
 ]
 
-
+def get_exercise_by_id(exercise_id):
+    """
+    Get a single exercise by ID
+    ---
+    tags:
+      - Exercises
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: exercise_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Exercise details
+      404:
+        description: Exercise not found
+    """
+    exercise = Exercise.query.filter_by(e_id=exercise_id, is_active=True).first()
+    if not exercise:
+        return jsonify({'error': 'Exercise not found'}), 404
+    return jsonify({'exercise': _exercise_dict(exercise)}), 200
+  
 def bulk_create_common_exercises():
     """
     Bulk-create a set of common exercises (admin)

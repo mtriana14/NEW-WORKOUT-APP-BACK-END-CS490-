@@ -8,7 +8,7 @@ from app.controllers.client_controller import (
     get_my_coaches,
     get_my_workout_plans,
     get_my_meal_plans,
-    get_saved_cards,
+    
 )
 from app.middleware.auth_middleware import login_required
  
@@ -22,5 +22,5 @@ client_bp.route('/client/<int:user_id>/requests', methods=['GET'])(login_require
 client_bp.route('/client/<int:user_id>/my-coach', methods=['GET'])(login_required(get_my_coach))
 client_bp.route('/client/<int:user_id>/workout-plans', methods=['GET'])(login_required(get_my_workout_plans))
 client_bp.route('/client/<int:user_id>/meal-plans', methods=['GET'])(login_required(get_my_meal_plans))
-client_bp.route('/client/saved-cards', methods=['GET'])(login_required(get_saved_cards))
+#client_bp.route('/client/saved-cards', methods=['GET'])(login_required(get_saved_cards))
  

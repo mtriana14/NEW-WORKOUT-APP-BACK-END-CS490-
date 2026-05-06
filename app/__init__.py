@@ -31,7 +31,8 @@ def create_app():
     if extra_origin:
         allowed_origins.append(extra_origin)
 
-    CORS(app, origins=allowed_origins, supports_credentials=True)
+    # Cambia la línea de CORS por esta:
+    CORS(app, resources={r"/api/*": {"origins": allowed_origins}}, supports_credentials=True)
     JWTManager(app)
     init_db(app)
 
@@ -67,8 +68,13 @@ def create_app():
     )
 
     with app.app_context():
-        from app.models import User, Coach, CoachAvailability, ClientRequest, Exercise, Notification, Payment, CoachRegistration, CoachManagement, Hire, Review, ActivityLog, ProgressPhoto
+        from app.models import User, Coach, CoachAvailability, ClientRequest, Exercise, Notification, Payment, CoachRegistration, CoachManagement, Hire, Review, ActivityLog, ProgressPhoto , MessageList, Message
 
+     
+    # from app.routes.progress_routes import progress_bp
+    # app.register_blueprint(progress_bp, url_prefix='/api')
+    # from app.routes.chat_routes import chat_bp
+    # app.register_blueprint(chat_bp, url_prefix='/api') 
     from app.routes.auth_routes import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/api')
     from app.routes.coach_availability_routes import coach_availability_bp

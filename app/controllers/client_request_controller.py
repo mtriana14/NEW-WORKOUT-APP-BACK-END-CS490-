@@ -133,31 +133,28 @@ def _request_dict(req, active_hire_client_ids=None):
 
 
 def get_pending_requests(coach_id):
-    """
-    Get all pending client requests for a coach
-    ---
-    tags:
-      - Coach Hiring
-    security:
-      - Bearer: []
-    parameters:
-      - in: path
-        name: coach_id
-        type: integer
-        required: true
-    responses:
-      200:
-        description: List of pending requests
-      404:
-        description: Coach not found
-    """
-    """Get all pending client requests for a coach."""
-    coach = Coach.query.filter_by(user_id=coach_id).first()
+    """Get all client requests for a coach (all statuses)."""
+    coach = Coach.query.filter_by(coach_id=coach_id).first()
     if not coach:
         return jsonify({'error': 'Coach not found'}), 404
 
-    requests = ClientRequest.query.filter_by(coach_id=coach.coach_id, status='pending').all()
-    return jsonify({'requests': [_request_dict(req) for req in requests]}), 200
+    from app.models.user import User
+    reqs = ClientRequest.query.filter_by(coach_id=coach_id).all()
+    result = []
+
+    for req in reqs:
+        client_user = User.query.filter_by(user_id=req.client_id).first()
+        result.append({
+            'request_id':   req.request_id,
+            'client_id':    req.client_id,
+            'client_name':  f'{client_user.first_name} {client_user.last_name}' if client_user else 'Unknown',
+            'client_email': client_user.email if client_user else None,
+            'coach_id':     req.coach_id,
+            'message':      req.message,
+            'status':       req.status,
+            'created_at':   str(req.created_at),
+            'responded_at': str(req.responded_at) if req.responded_at else None,
+        })
 
 
 def get_all_requests(coach_id):

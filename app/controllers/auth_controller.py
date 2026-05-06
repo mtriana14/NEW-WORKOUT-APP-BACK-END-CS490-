@@ -95,55 +95,35 @@ def register():
 
 
 def login():
-    """
-    Login with email and password
-    ---
-    tags:
-      - Authentication
-    parameters:
-      - in: body
-        name: body
-        required: true
-        schema:
-          type: object
-          required:
-            - email
-            - password
-          properties:
-            email:
-              type: string
-            password:
-              type: string
-    responses:
-      200:
-        description: Login successful
-      400:
-        description: Email and password are required
-      401:
-        description: Invalid email or password
-    """
     data = request.get_json()
 
     if not data.get('email') or not data.get('password'):
         return jsonify({'error': 'Email and password are required'}), 400
 
-    # Find user
     user = User.query.filter_by(email=data.get('email'), is_active=True).first()
     if not user:
         return jsonify({'error': 'Invalid email or password'}), 401
 
-    # Verify password
+    # --- VERIFICACIÓN DE PASSWORD ---
+    password_ingresada = data.get('password').encode('utf-8')
+    
     try:
-        if not bcrypt.checkpw(data.get('password').encode('utf-8'), user.password.encode('utf-8')):
+        # Si la contraseña coincide, seguimos adelante
+        if not bcrypt.checkpw(password_ingresada, user.password.encode('utf-8')):
             return jsonify({'error': 'Invalid email or password'}), 401
-    except ValueError: # this is for when the salt is invalid. It resalts the password and reattempts the login
-        hashed = bcrypt.hashpw(data.get('password').encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            
+    except ValueError: 
+        # Si el hash es viejo o inválido, lo actualizamos con la contraseña actual
+        hashed = bcrypt.hashpw(password_ingresada, bcrypt.gensalt()).decode('utf-8')
         user.password = hashed
-        login()
+        db.session.commit() # Guardamos la nueva clave encriptada
+        # Como acabamos de generar el hash con la misma clave, ya sabemos que es válida
+        # El código seguirá hacia la generación del token abajo
+
+    # --- ÉXITO ---
     user.last_login = db.func.now()
     db.session.commit()
 
-    # Generate token
     token = create_access_token(
         identity=str(user.user_id),
         additional_claims={'role': user.role}
@@ -160,8 +140,6 @@ def login():
             'role': user.role
         }
     }), 200
-
-
 def logout():
     """
     Logout the current user
