@@ -68,14 +68,55 @@ def _all_bucket_keys(start, end, period):
 
 def get_active_users_report():
     """
-    GET /api/admin/reports/active-users?period=daily|weekly|monthly
-
-    "Active" = a user who has either logged an activity OR submitted a check-in
-    OR logged into the platform in that bucket. We dedupe by user_id per bucket.
-
-    Response includes:
-      - totals: total users, currently active, deactivated
-      - buckets: [{ bucket: 'YYYY-MM-DD', active_users: N, new_signups: N }, ...]
+    Get active users and signup report
+    ---
+    tags:
+      - Admin Reports
+    security:
+      - Bearer: []
+    parameters:
+      - in: query
+        name: period
+        type: string
+        enum: [daily, weekly, monthly]
+        default: daily
+        description: The time grain for the report buckets.
+    responses:
+      200:
+        description: A report containing user activity trends and totals.
+        schema:
+          type: object
+          properties:
+            period:
+              type: string
+            start_date:
+              type: string
+            end_date:
+              type: string
+            totals:
+              type: object
+              properties:
+                total_users:
+                  type: integer
+                active_accounts:
+                  type: integer
+                deactivated:
+                  type: integer
+            peak_bucket:
+              type: object
+            buckets:
+              type: array
+              items:
+                type: object
+                properties:
+                  bucket:
+                    type: string
+                  active_users:
+                    type: integer
+                  new_signups:
+                    type: integer
+      400:
+        description: Invalid period parameter provided.
     """
     period = (request.args.get('period') or 'daily').lower()
     if period not in ('daily', 'weekly', 'monthly'):
@@ -183,7 +224,29 @@ def get_active_users_report():
 
 
 def get_role_breakdown_report():
-    """GET /api/admin/reports/roles — quick counts by role & status."""
+    """
+    Get user role and status breakdown
+    ---
+    tags:
+      - Admin Reports
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: A breakdown of users by their role and active status.
+        schema:
+          type: object
+          properties:
+            by_role:
+              type: object
+              additionalProperties:
+                type: object
+                properties:
+                  active:
+                    type: integer
+                  deactivated:
+                    type: integer
+    """
     rows = (
         db.session.query(User.role, User.is_active, func.count(User.user_id))
         .group_by(User.role, User.is_active)

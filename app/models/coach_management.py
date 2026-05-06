@@ -3,11 +3,11 @@ from datetime import datetime
 
 class CoachManagement(db.Model):
     __tablename__ = 'coachmanagement'
-    action_id           = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    coach_id            = db.Column(db.Integer, db.ForeignKey('coaches.coach_id'), nullable=False)
-    admin_id            = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
-    action_type         = db.Column(db.Enum('suspend', 'reactivate', 'disable'), nullable=False)
-    reason              = db.Column(db.Text, nullable=True)
+    action_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    coach_id = db.Column(db.Integer, db.ForeignKey('coaches.coach_id'), nullable=False)
+    admin_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    action_type = db.Column(db.Enum('suspend', 'reactivate', 'disable'), nullable=False)
+    reason = db.Column(db.Text, nullable=True)
     suspension_duration = db.Column(db.String(50), nullable=True)
     action_date         = db.Column(db.DateTime, default=datetime.utcnow)
 

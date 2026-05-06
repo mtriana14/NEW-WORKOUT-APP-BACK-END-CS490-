@@ -7,6 +7,33 @@ from app.models.coach import Coach
 from flask_jwt_extended import get_jwt_identity
 
 def dismiss_coach(coach_id):
+    """
+    Dismiss a coach by cancelling the active hire and subscription
+    ---
+    tags:
+      - Client Subscriptions
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+        description: The ID of the coach to be dismissed
+    responses:
+      200:
+        description: Coach dismissed successfully, hire and subscription cancelled
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Coach dismissed successfully
+      404:
+        description: No active coaching relationship found for the given coach_id
+      500:
+        description: Internal server error
+    """
     """Dismiss a coach - cancel hire and subscription."""
     user_id = int(get_jwt_identity())
 

@@ -1,119 +1,229 @@
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask import jsonify, request, current_app
+from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_socketio import join_room, emit
 from app.config.db import db
 from app.models.message import Message
-from app.models.message_list import MessageList
-from datetime import datetime
+from app.models.messagelist import MessageList
+from app.models.coach import Coach
+from app.models.user import User
+from app import socketio
+from datetime import datetime 
+import json
 
-chat_bp = Blueprint('chat', __name__)
-
-
-# GET /api/chat/conversation  — obtener o crear conversación entre user y coach
-@chat_bp.route('/api/chat/conversation', methods=['GET'])
 @jwt_required()
-def get_or_create_conversation():
-    current_user_id = int(get_jwt_identity())
-    coach_id = request.args.get('coach_id', type=int)
+def get_or_create_convo(coach_id):
+    """
+    Get or create a conversation with a coach
+    ---
+    tags:
+      - Messaging & Real-time
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+        description: User ID of the coach to message
+    responses:
+      200:
+        description: Conversation object retrieved or created
+      400:
+        description: Cannot start conversation (self-messaging or non-coach)
+      500:
+        description: Internal server error
+    """
+    try:
+        user_id = get_jwt_identity()
+        coach = Coach.query.filter_by(user_id = coach_id).first()
+        if not coach:
+            return jsonify({"Failed":"Can only start convos with coaches"}), 400
+        
+        if int(user_id) == int(coach_id):
+            return jsonify({"Failed":"Cant start convo with yourself"}), 400
+        
+        convo = MessageList.query.filter_by(user_id=user_id, coach_id=coach.coach_id).first()
+        if not convo:
+            convo = MessageList(user_id=user_id, coach_id=coach.coach_id)
+            db.session.add(convo)
+            db.session.commit()
+        
+        return jsonify({"Conversation":convo.to_dict()}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({"Failed":str(e)}), 500
 
-    if not coach_id:
-        return jsonify({'error': 'coach_id is required'}), 400
+@jwt_required()
+def get_conversations():
+    """
+    Get all conversations for the current user
+    ---
+    tags:
+      - Messaging & Real-time
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: List of conversations
+      404:
+        description: User not found
+      500:
+        description: Internal server error
+    """
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"Failed":"User not found"}), 404
+        if user.role == 'coach':
+            coach = Coach.query.filter_by(user_id=user_id).first()
+            if not coach:
+                return jsonify({"Conversations": []}), 200
+            convos = MessageList.query.filter_by(coach_id=coach.coach_id).all()
+        else:
+            convos = MessageList.query.filter_by(user_id=user_id).all()
+        return jsonify({"Conversations":[convo.to_dict() for convo in convos]}), 200
+    except Exception as e:
+        print(e)
+        return jsonify({"Failed":str(e)}), 500
 
-    convo = MessageList.query.filter_by(
-        user_id=current_user_id, coach_id=coach_id
-    ).first()
-
-    if not convo:
-        convo = MessageList(user_id=current_user_id, coach_id=coach_id)
-        db.session.add(convo)
-        db.session.commit()
-
-    return jsonify(convo.to_dict()), 200
-
-
-# GET /api/chat/<conversation_id>/messages  — historial
-@chat_bp.route('/api/chat/<int:conversation_id>/messages', methods=['GET'])
 @jwt_required()
 def get_messages(conversation_id):
-    current_user_id = int(get_jwt_identity())
+    """
+    Get messages for a specific conversation
+    ---
+    tags:
+      - Messaging & Real-time
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: conversation_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: List of messages (marks unread as read)
+      404:
+        description: Conversation or messages not found
+    """
+    try:
+        user_id = get_jwt_identity()
+        convo = MessageList.query.filter(
+            (MessageList.MessageList_id == conversation_id) &
+            ((MessageList.user_id == user_id) | (MessageList.coach_id == user_id))
+        ).first()
+        if not convo:
+            return jsonify({"Failed":"No convo found"}), 404
+        messages = Message.query.filter_by(conversation_id=conversation_id).all()
+        if not messages:
+            return jsonify({"Failed":"No messages found"}), 404
+        
+        Message.query.filter_by(conversation_id=conversation_id, is_read=False) \
+        .filter(Message.sender_id != user_id) \
+        .update({"is_read": True})
+        db.session.commit()
+        return jsonify({"messages": [m.to_dict() for m in messages]}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({"Failed":str(e)}), 500
+    
+@socketio.on('join')
+def handle_join(data):
+    try:
+        if isinstance(data, str):
+            data = json.loads(data)
+        room = str(data['conversation_id'])
+        join_room(room)
+        emit('status', {'message':f'joined conversation {room}'}, to=room)
+    except Exception as e:
+        emit('error', {'message':str(e)})
 
-    convo = MessageList.query.get(conversation_id)
-    if not convo:
-        return jsonify({'error': 'Conversation not found'}), 404
+@socketio.on('send_message')
+def handle_message(data):
+    try:
+        if isinstance(data, str):
+            data = json.loads(data)
 
-    # Verificar que el usuario pertenece a esta conversación
-    if convo.user_id != current_user_id and convo.coach_id != current_user_id:
-        return jsonify({'error': 'Unauthorized'}), 403
+        conversation_id = int(data['conversation_id'])
+        sender_id       = int(data['sender_id'])
+        content         = data['content']
 
-    messages = Message.query.filter_by(
-        conversation_id=conversation_id
-    ).order_by(Message.created_at.asc()).all()
+        if not content or not content.strip():
+            emit('error', {'message': 'Message content cannot be empty'})
+            return
 
-    # Marcar como leídos
-    for m in messages:
-        if m.sender_id != current_user_id:
-            m.is_read = True
-    db.session.commit()
+        conversation = MessageList.query.filter(
+            (MessageList.MessageList_id == conversation_id) &
+            ((MessageList.user_id == sender_id) | (MessageList.coach_id == sender_id))
+        ).first()
 
-    return jsonify([m.to_dict() for m in messages]), 200
+        if not conversation:
+            emit('error', {'message': 'Conversation not found or not authorized'})
+            return
 
+        message = Message(
+            conversation_id=conversation_id,
+            sender_id=sender_id,
+            content=content
+        )
+        db.session.add(message)
 
-# POST /api/chat/<conversation_id>/messages  — enviar mensaje
-@chat_bp.route('/api/chat/<int:conversation_id>/messages', methods=['POST'])
-@jwt_required()
-def send_message(conversation_id):
-    current_user_id = int(get_jwt_identity())
-    data = request.get_json()
-    content = data.get('content', '').strip()
+        conversation.last_message_at = datetime.utcnow()
+        db.session.commit()
 
-    if not content:
-        return jsonify({'error': 'content is required'}), 400
+        emit('new_message', message.to_dict(), to=str(conversation_id))
 
-    convo = MessageList.query.get(conversation_id)
-    if not convo:
-        return jsonify({'error': 'Conversation not found'}), 404
+    except Exception as e:
+        db.session.rollback()
+        emit('error', {'message': str(e)})
 
-    if convo.user_id != current_user_id and convo.coach_id != current_user_id:
-        return jsonify({'error': 'Unauthorized'}), 403
+@socketio.on('mark_read')
+def handle_mark_read(data):
+    try:
+        if isinstance(data, str):
+            data = json.loads(data)
 
-    msg = Message(
-        conversation_id=conversation_id,
-        sender_id=current_user_id,
-        content=content
-    )
-    db.session.add(msg)
+        conversation_id = int(data['conversation_id'])
+        user_id         = int(data['user_id'])
 
-    convo.last_message_at = datetime.utcnow()
-    db.session.commit()
+        with current_app.app_context():
+            unread_messages = Message.query.filter(
+                Message.conversation_id == conversation_id,
+                Message.is_read == False,
+                Message.sender_id != user_id
+            ).all()
 
-    return jsonify(msg.to_dict()), 201
+            if not unread_messages:
+                emit('messages_read', {'conversation_id': conversation_id, 'count': 0})
+                return
 
-# GET /api/chat/coach/conversations — lista de conversaciones del coach
-@chat_bp.route('/chat/coach/conversations', methods=['GET'])
-@jwt_required()
-def get_coach_conversations():
-    current_user_id = int(get_jwt_identity())
+            for message in unread_messages:
+                message.is_read = True
 
-    convos = MessageList.query.filter_by(coach_id=current_user_id).order_by(
-        MessageList.last_message_at.desc()
-    ).all()
+            db.session.commit()
 
-    result = []
-    for c in convos:
-        last_msg = Message.query.filter_by(
-            conversation_id=c.MessageList_id
-        ).order_by(Message.created_at.desc()).first()
-
-        unread = Message.query.filter_by(
-            conversation_id=c.MessageList_id,
-            is_read=False
-        ).filter(Message.sender_id != current_user_id).count()
-
-        result.append({
-            'conversation_id': c.MessageList_id,
-            'user_id':         c.user_id,
-            'last_message':    last_msg.content if last_msg else "",
-            'last_time':       last_msg.created_at.isoformat() if last_msg else None,
-            'unread_count':    unread
+        emit('messages_read', {
+            'conversation_id': conversation_id,
+            'count': len(unread_messages)  
         })
+        emit('messages_read', {
+            'conversation_id': conversation_id,
+            'count': len(unread_messages)
+        }, to=str(conversation_id))
 
-    return jsonify(result), 200
+    except Exception as e:
+        db.session.rollback()
+        print(f"mark_read error: {e}")
+        emit('error', {'message': str(e)})
+
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('Client disconnected')

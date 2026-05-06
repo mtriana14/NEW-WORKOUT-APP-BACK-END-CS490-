@@ -6,6 +6,47 @@ from datetime import datetime, date
 
 @jwt_required()
 def create_checkin():
+    """
+    Submit a daily wellness check-in
+    ---
+    tags:
+      - Check-ins
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - checkin_date
+          properties:
+            checkin_date:
+              type: string
+              example: "2026-04-30"
+            mood:
+              type: integer
+              minimum: 1
+              maximum: 10
+            energy_level:
+              type: integer
+              minimum: 1
+              maximum: 10
+            hours_of_sleep:
+              type: number
+            soreness:
+              type: integer
+              minimum: 1
+              maximum: 10
+            notes:
+              type: string
+    responses:
+      200:
+        description: Check-in created
+      400:
+        description: Invalid date format
+    """
     try:
         user_id = get_jwt_identity()
         data = request.json
@@ -29,4 +70,4 @@ def create_checkin():
         return jsonify({"Success":"Checkin created"}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"Error":f"{e}"})
+        return jsonify({"Error":f"{e}"}), 500

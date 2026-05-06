@@ -3,11 +3,22 @@ from app.config.db import db
 from app.models.payment import Payment
 from app.models.user import User
 from app.models.coach import Coach
+from app.models.notification import Notification
 from sqlalchemy import func
 
 
 def get_payment_summary():
-    """GET /api/admin/payments/summary and /api/admin/payments/stats"""
+    """
+    Get payment summary and revenue statistics (admin)
+    ---
+    tags:
+      - Payments
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Total revenue, transaction count, and breakdown by status
+    """
     total_revenue = db.session.query(
         func.sum(Payment.amount)
     ).filter_by(status='completed').scalar() or 0
@@ -37,7 +48,26 @@ def get_payment_summary():
 
 
 def get_all_payments():
-    """GET /api/admin/payments"""
+    """
+    Get paginated list of all payments (admin)
+    ---
+    tags:
+      - Payments
+    security:
+      - Bearer: []
+    parameters:
+      - in: query
+        name: page
+        type: integer
+        default: 1
+      - in: query
+        name: per_page
+        type: integer
+        default: 25
+    responses:
+      200:
+        description: Paginated payment list
+    """
     page     = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 25, type=int)
 
@@ -83,8 +113,115 @@ def get_all_payments():
     }), 200
 
 
+def get_payment_detail(payment_id):
+    """
+    Get full details for a single payment (admin)
+    ---
+    tags:
+      - Payments
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: payment_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Payment detail
+      404:
+        description: Payment not found
+    """
+    payment = Payment.query.filter_by(payment_id=payment_id).first()
+    if not payment:
+        return jsonify({'error': 'Payment not found'}), 404
+
+    client = User.query.filter_by(user_id=payment.client_id).first()
+    coach = Coach.query.filter_by(coach_id=payment.coach_id).first()
+    coach_user = User.query.filter_by(user_id=coach.user_id).first() if coach else None
+
+    return jsonify({
+        'payment': {
+            'payment_id': payment.payment_id,
+            'client_name': f'{client.first_name} {client.last_name}' if client else 'Unknown',
+            'coach_name': f'{coach_user.first_name} {coach_user.last_name}' if coach_user else 'Unknown',
+            'amount': float(payment.amount),
+            'currency': payment.currency,
+            'status': payment.status,
+            'payment_method_type': payment.payment_method_type,
+            'transaction_id': payment.transaction_id,
+            'description': payment.description,
+            'paid_at': payment.paid_at.isoformat() if payment.paid_at else None,
+            'created_at': payment.created_at.isoformat() if payment.created_at else None,
+        }
+    }), 200
+
+
+def refund_payment(payment_id):
+    """
+    Refund a payment and notify the client (admin)
+    ---
+    tags:
+      - Payments
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: payment_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Payment refunded
+      400:
+        description: Payment already refunded
+      404:
+        description: Payment not found
+    """
+    payment = Payment.query.filter_by(payment_id=payment_id).first()
+    if not payment:
+        return jsonify({'error': 'Payment not found'}), 404
+
+    if payment.status == 'refunded':
+        return jsonify({'error': 'Payment has already been refunded'}), 400
+
+    payment.status = 'refunded'
+
+    notification = Notification(
+        user_id=payment.client_id,
+        title='Payment Refunded',
+        message=f'Your payment of ${float(payment.amount):.2f} has been refunded.',
+        type='payment'
+    )
+    db.session.add(notification)
+    db.session.commit()
+
+    return jsonify({
+        'message': 'Payment refunded successfully',
+        'payment_id': payment.payment_id,
+        'new_status': payment.status,
+    }), 200
+
+
 def get_coach_payment_summary(coach_id):
-    """GET /api/admin/payments/coach/<coach_id>"""
+    """
+    Get total earnings and transaction count for a coach (admin)
+    ---
+    tags:
+      - Payments
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Coach payment summary
+      404:
+        description: Coach not found
+    """
     coach = Coach.query.filter_by(coach_id=coach_id).first()
     if not coach:
         return jsonify({'error': 'Coach not found'}), 404

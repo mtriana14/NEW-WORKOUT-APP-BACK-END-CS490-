@@ -12,6 +12,29 @@ def allowed_file(filename: str) -> bool:
     return '.' in filename and filename.rsplit('.',1)[1].lower() in extensions
 
 def upload_pfp():
+    """
+    Upload a profile photo
+    ---
+    tags:
+      - User Management
+    security:
+      - Bearer: []
+    consumes:
+      - multipart/form-data
+    parameters:
+      - in: formData
+        name: profile_photo
+        type: file
+        required: true
+        description: Image file (png, jpg, jpeg, gif, webp)
+    responses:
+      200:
+        description: Profile photo uploaded successfully
+      400:
+        description: No file provided or invalid file type
+      500:
+        description: Server error
+    """
     try:
         user_id = get_jwt_identity()
         if 'profile_photo' not in request.files:

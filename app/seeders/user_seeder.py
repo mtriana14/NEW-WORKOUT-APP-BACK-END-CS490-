@@ -5,7 +5,7 @@ import bcrypt
 def seed_users():
     """Seed initial users - admin, coaches and clients."""
 
-    if User.query.count() > 0:
+    if User.query.filter_by(email='john.coach@fitnessapp.com').first():
         print('Users already seeded, skipping...')
         return
 

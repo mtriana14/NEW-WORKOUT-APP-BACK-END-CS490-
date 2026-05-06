@@ -15,6 +15,11 @@ from .activity_log import ActivityLog
 from .workout_calendar import WorkoutCalendar
 from .workout_exercise import WorkoutExercise
 from .progress_photo import ProgressPhoto
-from .message_list import MessageList
-from .message import Message
 from .progress_entry import ProgressEntry
+from .meal_plan import MealPlan
+from .MealPlanFood import MealPlanFood
+from .WorkoutPlan import WorkoutPlan
+from .fitnessgoals import FitnessGoal
+from .checkin import Check_in
+from .messagelist import MessageList
+from .message import Message

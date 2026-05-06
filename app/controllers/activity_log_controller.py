@@ -7,8 +7,40 @@ from datetime import datetime
 
 def log_strength():
     """
-    UC 4.1 — Log a strength training session.
-    Required: log_date, exercise_id, sets_completed, reps_completed
+    Log a strength training session
+    ---
+    tags:
+      - Activity Logs
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - log_date
+            - exercise_id
+          properties:
+            log_date:
+              type: string
+              example: "2026-04-30"
+            exercise_id:
+              type: integer
+            sets_completed:
+              type: integer
+            reps_completed:
+              type: integer
+            weight_used:
+              type: number
+            notes:
+              type: string
+    responses:
+      201:
+        description: Strength session logged successfully
+      400:
+        description: Missing required fields
     """
     user_id = int(get_jwt_identity())
     data = request.get_json() or {}
@@ -39,8 +71,40 @@ def log_strength():
 
 def log_cardio():
     """
-    UC 4.2 — Log a cardio activity.
-    Required: log_date, cardio_type, duration_minutes
+    Log a cardio activity
+    ---
+    tags:
+      - Activity Logs
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - log_date
+            - cardio_type
+            - duration_minutes
+          properties:
+            log_date:
+              type: string
+              example: "2026-04-30"
+            cardio_type:
+              type: string
+              example: "Running"
+            duration_minutes:
+              type: integer
+            distance:
+              type: number
+            notes:
+              type: string
+    responses:
+      201:
+        description: Cardio activity logged successfully
+      400:
+        description: Missing required fields
     """
     user_id = int(get_jwt_identity())
     data = request.get_json() or {}
@@ -72,8 +136,35 @@ def log_cardio():
 
 def log_steps_calories():
     """
-    UC 4.3 — Log daily steps and calorie intake.
-    Required: log_date, at least one of step_count or calorie_intake
+    Log daily steps and calorie intake
+    ---
+    tags:
+      - Activity Logs
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - log_date
+          properties:
+            log_date:
+              type: string
+              example: "2026-04-30"
+            step_count:
+              type: integer
+            calorie_intake:
+              type: integer
+            notes:
+              type: string
+    responses:
+      201:
+        description: Steps/calories logged successfully
+      400:
+        description: Missing required fields or no data provided
     """
     user_id = int(get_jwt_identity())
     data = request.get_json() or {}
@@ -87,7 +178,6 @@ def log_steps_calories():
     if step_count is None and calorie_intake is None:
         return jsonify({'error': 'At least one of step_count or calorie_intake is required'}), 400
 
-    # Use 'steps' if step_count provided, otherwise 'calories'
     activity_type = 'steps' if step_count is not None else 'calories'
 
     log = ActivityLog(
@@ -109,8 +199,25 @@ def log_steps_calories():
 
 def get_my_logs():
     """
-    Returns all non-deleted logs for the logged-in user.
-    Optional query parameters: ?type=strength|cardio|steps|calories&date=YYYY-MM-DD
+    Get all personal activity logs
+    ---
+    tags:
+      - Activity Logs
+    security:
+      - Bearer: []
+    parameters:
+      - in: query
+        name: type
+        type: string
+        enum: [strength, cardio, steps, calories]
+        description: Filter by activity type
+      - in: query
+        name: date
+        type: string
+        description: Filter by date (YYYY-MM-DD)
+    responses:
+      200:
+        description: List of activity logs
     """
     user_id = int(get_jwt_identity())
 
@@ -134,8 +241,23 @@ def get_my_logs():
 
 def delete_log(log_id):
     """
-    UC 4.4 — Soft delete a personal log entry.
-    Only the owner can delete their own log.
+    Soft delete a personal log entry
+    ---
+    tags:
+      - Activity Logs
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: log_id
+        type: integer
+        required: true
+        description: ID of the log to delete
+    responses:
+      200:
+        description: Log entry deleted successfully
+      404:
+        description: Log entry not found
     """
     user_id = int(get_jwt_identity())
 

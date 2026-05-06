@@ -10,41 +10,77 @@ from datetime import datetime
  
 @jwt_required()
 def create_mealplan(user_id=None):
+    """
+    Create a meal plan (coach or client)
+    ---
+    tags:
+      - Meal Plans
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - name
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            status:
+              type: string
+              default: active
+            client_id:
+              type: integer
+              description: Required when called by a coach
+    responses:
+      201:
+        description: Meal plan created
+      400:
+        description: Missing name or client_id
+    """
     try:
         jwt_user_id = int(get_jwt_identity())
         data = request.json
         if not data:
             return jsonify({"Error": "No body"}), 400
- 
-        # Look up coach from JWT so coach_id is always set correctly
-        coach = Coach.query.filter_by(user_id=jwt_user_id).first()
-        if not coach:
-            return jsonify({"Error": "Coach not found"}), 404
- 
-        client_id = data.get("client_id")
-        if not client_id:
-            return jsonify({"Error": "client_id is required"}), 400
- 
+
         name = data.get("name")
         if not name:
             return jsonify({"Error": "name is required"}), 400
- 
+
+        # Check if caller is a coach
+        coach = Coach.query.filter_by(user_id=jwt_user_id).first()
+
+        if coach:
+            # Coach creating plan for a client
+            client_id = data.get("client_id")
+            if not client_id:
+                return jsonify({"Error": "client_id is required for coaches"}), 400
+            plan_user_id = client_id
+            plan_coach_id = coach.coach_id
+        else:
+            # Client creating their own plan
+            plan_user_id = jwt_user_id
+            plan_coach_id = None
+
         mealplan = MealPlan(
-            user_id=client_id,
-            coach_id=coach.coach_id,
+            user_id=plan_user_id,
+            coach_id=plan_coach_id,
             name=name,
             description=data.get("description", ""),
             status=data.get("status", "active")
         )
- 
         db.session.add(mealplan)
         db.session.commit()
         return jsonify({
             "Success": "Mealplan created",
-            "meal_plan_id": mealplan.meal_plan_id,
-            "Description": data.get("description")
+            "meal_plan_id": mealplan.meal_plan_id
         }), 201
- 
+
     except Exception as e:
         db.session.rollback()
         print(e)
@@ -53,6 +89,26 @@ def create_mealplan(user_id=None):
  
 @jwt_required()
 def delete_mealplan(mealplan_id, user_id=None):
+    """
+    Delete a meal plan
+    ---
+    tags:
+      - Meal Plans
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: mealplan_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Meal plan deleted
+      403:
+        description: Not authorized to delete this plan
+      404:
+        description: Meal plan not found
+    """
     try:
         jwt_user_id = int(get_jwt_identity())
  
@@ -79,6 +135,39 @@ def delete_mealplan(mealplan_id, user_id=None):
  
 @jwt_required()
 def update_mealplan(mealplan_id, user_id=None):
+    """
+    Update a meal plan
+    ---
+    tags:
+      - Meal Plans
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: mealplan_id
+        type: integer
+        required: true
+      - in: body
+        name: body
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            status:
+              type: string
+    responses:
+      200:
+        description: Meal plan updated
+      400:
+        description: No valid fields to update
+      403:
+        description: Not authorized
+      404:
+        description: Meal plan not found
+    """
     try:
         jwt_user_id = int(get_jwt_identity())
         data = request.json
@@ -102,12 +191,21 @@ def update_mealplan(mealplan_id, user_id=None):
         editable  = [field for field in all_cols if field not in non_edits]
         updates   = {key: data[key] for key in editable if key in data}
  
+        if not updates:
+            return jsonify({'error': 'No valid fields to update'}), 400
+ 
         for key, value in updates.items():
             setattr(mealplan, key, value)
  
         mealplan.updated_at = datetime.utcnow()
         db.session.commit()
-        return jsonify({"Success": f"Mealplan {mealplan_id} has been updated"}), 200
+        return jsonify({
+            'meal_plan_id': mealplan.meal_plan_id,
+            'name': mealplan.name,
+            'description': mealplan.description,
+            'status': mealplan.status,
+            'updated_at': mealplan.updated_at.isoformat() if mealplan.updated_at else None,
+        }), 200
  
     except Exception as e:
         db.session.rollback()
@@ -117,6 +215,24 @@ def update_mealplan(mealplan_id, user_id=None):
  
 @jwt_required()
 def get_one_mealplan(mealplan_id):
+    """
+    Get a single meal plan
+    ---
+    tags:
+      - Meal Plans
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: mealplan_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Meal plan details
+      404:
+        description: Meal plan not found
+    """
     try:
         user_id = get_jwt_identity()
         mealplan = MealPlan.query.filter_by(meal_plan_id=mealplan_id, user_id=user_id).first()
@@ -132,6 +248,17 @@ def get_one_mealplan(mealplan_id):
  
 @jwt_required()
 def get_all_mealplans():
+    """
+    Get all meal plans for the current user
+    ---
+    tags:
+      - Meal Plans
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: List of meal plans
+    """
     try:
         user_id = get_jwt_identity()
         query = MealPlan.query.filter_by(user_id=user_id)
@@ -187,6 +314,56 @@ def _plan_with_days(plan):
  
 @jwt_required()
 def add_food_item(mealplan_id):
+    """
+    Add a food item to a meal plan
+    ---
+    tags:
+      - Meal Plans
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: mealplan_id
+        type: integer
+        required: true
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - day_of_week
+            - meal_type
+            - food_name
+          properties:
+            day_of_week:
+              type: string
+              example: Monday
+            meal_type:
+              type: string
+              example: breakfast
+            food_name:
+              type: string
+            calories:
+              type: integer
+            protein:
+              type: number
+            carbs:
+              type: number
+            fat:
+              type: number
+            portion_size:
+              type: string
+            notes:
+              type: string
+    responses:
+      201:
+        description: Food item added
+      400:
+        description: Missing required fields
+      404:
+        description: Meal plan not found
+    """
     try:
         user_id = get_jwt_identity()
  
@@ -221,8 +398,22 @@ def add_food_item(mealplan_id):
  
 def get_coach_mealplans(user_id=None):
     """
-    GET /api/coach/<user_id>/meal-plans
-    Returns all meal plans created by the logged-in coach.
+    Get all meal plans created by this coach
+    ---
+    tags:
+      - Meal Plans
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: user_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Coach's meal plans
+      404:
+        description: Coach not found
     """
     try:
         jwt_user_id = int(get_jwt_identity())
@@ -242,8 +433,26 @@ def get_coach_mealplans(user_id=None):
  
 def get_client_mealplans(user_id, client_id):
     """
-    GET /api/coach/<user_id>/clients/<client_id>/meal-plans
-    Returns meal plans for a specific client created by this coach.
+    Get meal plans for a specific client (coach)
+    ---
+    tags:
+      - Meal Plans
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: user_id
+        type: integer
+        required: true
+      - in: path
+        name: client_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Client's meal plans
+      404:
+        description: Coach not found
     """
     try:
         jwt_user_id = int(get_jwt_identity())
