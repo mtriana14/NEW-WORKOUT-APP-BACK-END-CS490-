@@ -119,7 +119,7 @@ jobs:
           UPLOAD_FOLDER: static/uploads/profile_photos
         run: |
           python -c "
-          from app.controllers.auth_controller import register, login, logout
+          from app.controllers.auth_controller import register, login, logout, reset_password
           from app.controllers.activity_log_controller import log_strength, log_cardio, log_steps_calories
           from app.controllers.billing_controller import get_saved_cards, pay_with_saved_card
           from app.controllers.client_request_controller import send_request, respond_to_request
@@ -151,6 +151,7 @@ jobs:
           from app.controllers.account_status_controller import deactivate_my_account, reactivate_account
           from app.controllers.progress_photo_controller import upload_progress_photo, list_my_progress_photos
           from app.controllers.admin_reports_controller import get_active_users_report
+          from app.controllers.client_controller import get_available_coaches, get_my_coach, get_my_workout_plans, get_my_meal_plans
           print('All controllers imported successfully')
           "
 

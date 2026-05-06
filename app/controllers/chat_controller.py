@@ -5,7 +5,6 @@ from app.config.db import db
 from app.models.message import Message
 from app.models.messagelist import MessageList
 from app.models.coach import Coach
-from app.models.user import User
 from app import socketio
 from datetime import datetime 
 import json
@@ -42,9 +41,9 @@ def get_or_create_convo(coach_id):
         if int(user_id) == int(coach_id):
             return jsonify({"Failed":"Cant start convo with yourself"}), 400
         
-        convo = MessageList.query.filter_by(user_id=user_id, coach_id=coach.coach_id).first()
+        convo = MessageList.query.filter_by(user_id=user_id, coach_id=coach_id).first()
         if not convo:
-            convo = MessageList(user_id=user_id, coach_id=coach.coach_id)
+            convo = MessageList(user_id=user_id, coach_id=coach_id)
             db.session.add(convo)
             db.session.commit()
         
@@ -73,17 +72,10 @@ def get_conversations():
     """
     try:
         user_id = get_jwt_identity()
-        user = User.query.get(user_id)
-        if not user:
-            return jsonify({"Failed":"User not found"}), 404
-        if user.role == 'coach':
-            coach = Coach.query.filter_by(user_id=user_id).first()
-            if not coach:
-                return jsonify({"Conversations": []}), 200
-            convos = MessageList.query.filter_by(coach_id=coach.coach_id).all()
-        else:
-            convos = MessageList.query.filter_by(user_id=user_id).all()
-        return jsonify({"Conversations":[convo.to_dict() for convo in convos]}), 200
+        convos = MessageList.query.filter(
+            (MessageList.user_id == user_id) | (MessageList.coach_id == user_id)
+        ).all()
+        return jsonify({"Conversations": [convo.to_dict() for convo in convos]}), 200
     except Exception as e:
         print(e)
         return jsonify({"Failed":str(e)}), 500
@@ -117,9 +109,7 @@ def get_messages(conversation_id):
         if not convo:
             return jsonify({"Failed":"No convo found"}), 404
         messages = Message.query.filter_by(conversation_id=conversation_id).all()
-        if not messages:
-            return jsonify({"Failed":"No messages found"}), 404
-        
+
         Message.query.filter_by(conversation_id=conversation_id, is_read=False) \
         .filter(Message.sender_id != user_id) \
         .update({"is_read": True})

@@ -11,7 +11,11 @@ load_dotenv()
 socketio = SocketIO()
 
 def create_app():
-    app = Flask(__name__)
+    # Flask(__name__) resolves static_folder to backend/app/static/ (doesn't exist).
+    # The upload controllers save files relative to CWD (backend/static/uploads/…),
+    # so point Flask's static folder at backend/static/ instead.
+    _backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    app = Flask(__name__, static_folder=os.path.join(_backend_dir, "static"), static_url_path="/static")
 
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
@@ -31,17 +35,9 @@ def create_app():
     if extra_origin:
         allowed_origins.append(extra_origin)
 
-    CORS(app, origins=allowed_origins, supports_credentials=True)
+    CORS(app, resources={r"/api/*": {"origins": allowed_origins}}, supports_credentials=True)
     JWTManager(app)
     init_db(app)
-
-    socketio.init_app(app,
-        async_mode='eventlet',
-        cors_allowed_origins=[
-            'http://localhost:3000',
-            'https://workout-webapp-frontend-production.up.railway.app'
-        ]
-    )
 
     Swagger(app, template={
         "info": {
@@ -67,7 +63,11 @@ def create_app():
     )
 
     with app.app_context():
-        from app.models import User, Coach, CoachAvailability, ClientRequest, Exercise, Notification, Payment, CoachRegistration, CoachManagement, Hire, Review, ActivityLog, ProgressPhoto
+        from app.models import (
+            User, Coach, CoachAvailability, ClientRequest, Exercise,
+            Notification, Payment, CoachRegistration, CoachManagement,
+            Hire, Review, ActivityLog, ProgressPhoto, MessageList, Message
+        )
 
     from app.routes.auth_routes import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/api')

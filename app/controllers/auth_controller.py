@@ -289,6 +289,54 @@ def update_coach():
         print(e)
         return jsonify({"Failed": "Some error occured", "Error": str(e)}), 500
 
+def reset_password():
+    """
+    Reset a user's password by email
+    ---
+    tags:
+      - Authentication
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - email
+            - new_password
+          properties:
+            email:
+              type: string
+            new_password:
+              type: string
+    responses:
+      200:
+        description: Password reset successfully
+      400:
+        description: Missing fields or password too short
+      404:
+        description: No account found with that email
+    """
+    data = request.get_json()
+    email = (data.get('email') or '').strip()
+    new_password = data.get('new_password') or ''
+
+    if not email or not new_password:
+        return jsonify({'error': 'Email and new password are required'}), 400
+
+    if len(new_password) < 8:
+        return jsonify({'error': 'Password must be at least 8 characters'}), 400
+
+    user = User.query.filter_by(email=email, is_active=True).first()
+    if not user:
+        return jsonify({'error': 'No account found with that email'}), 404
+
+    hashed = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    user.password = hashed
+    db.session.commit()
+
+    return jsonify({'message': 'Password reset successfully'}), 200
+
 @jwt_required()
 def delete_user():
     """

@@ -57,7 +57,7 @@ def upload_pfp():
             user = User.query.get(user_id)
             user.profile_photo = db_path
             db.session.commit()
-            return jsonify({"Success":"Profile photo uploaded"}), 200
+            return jsonify({"Success": "Profile photo uploaded", "profile_photo": db_path}), 200
         else:
             return jsonify({"Failed":"Not a vlaid filename"}), 400
 
