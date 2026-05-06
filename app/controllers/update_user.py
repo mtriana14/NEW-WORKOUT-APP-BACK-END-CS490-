@@ -57,14 +57,14 @@ def update_user(user_id: int):
         cursor = conn.cursor()
 
         cursor.execute("""
-            SELECT user_id FROM Users WHERE user_id=%s
+            SELECT user_id FROM users WHERE user_id=%s
         """, (user_id,))
 
         if not cursor.fetchone():
             return jsonify({"Failed":"User not found"}), 404
 
         cursor.execute(
-            f"UPDATE Users SET {query}, updated_at = NOW() WHERE user_id = %s",
+            f"UPDATE users SET {query}, updated_at = NOW() WHERE user_id = %s",
             values + [user_id]
         )
 

@@ -29,9 +29,9 @@ def get_users():
     user_id = request.args.get("user_id")
     try:
         if user_id:
-            cursor.execute("SELECT * FROM Users u WHERE u.user_id = %s", (user_id))
+            cursor.execute("SELECT * FROM users u WHERE u.user_id = %s", (user_id))
         else:
-            cursor.execute("SELECT * FROM Users")
+            cursor.execute("SELECT * FROM users")
         users = cursor.fetchall()
         if not users:
             return jsonify({"Error":"No users found"}), 404
