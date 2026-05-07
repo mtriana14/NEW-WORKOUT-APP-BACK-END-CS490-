@@ -109,6 +109,6 @@ def test_get_all_goals_500(client):
     token = register_and_login(client, 1)
     seed_fitnessgoals()
     with patch('app.controllers.fitnessgoal_controller.FitnessGoal.query') as mock_commit:
-        mock_commit.filter_by.side_effect = Exception('Database error')
+        mock_commit.filter.side_effect = Exception('Database error')
         resp = client.get('/api/fitnessgoal', headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 500

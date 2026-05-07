@@ -141,6 +141,8 @@ def create_app():
     app.register_blueprint(chat_bp, url_prefix='/api')
     from app.routes.progress_routes import progress_bp
     app.register_blueprint(progress_bp, url_prefix='/api')
+    from app.routes.public_stats_routes import public_stats_bp
+    app.register_blueprint(public_stats_bp, url_prefix='/api')
 
     @app.route('/')
     def index():

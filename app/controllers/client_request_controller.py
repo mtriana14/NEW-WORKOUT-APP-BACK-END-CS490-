@@ -126,7 +126,7 @@ def _request_dict(req, active_hire_client_ids=None):
         'message': req.message,
         'status': req.status,
         'is_active': is_active,
-        'fitness_goal': active_goal.goal_type if active_goal else None,
+        'fitness_goal': active_goal.to_dict() if active_goal else None,
         'responded_at': _serialize_dt(req.responded_at),
         'created_at': _serialize_dt(req.created_at),
     }
@@ -161,7 +161,32 @@ def get_pending_requests(coach_id):
 
 
 def get_all_requests(coach_id):
-    """Get all client requests (any status) for a coach. URL param is user_id."""
+    """
+    Get all client requests for a coach (any status)
+    ---
+    tags:
+      - Coach Hiring
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+        description: The coach's user_id
+    responses:
+      200:
+        description: List of client requests with hire status
+        schema:
+          type: object
+          properties:
+            requests:
+              type: array
+              items:
+                type: object
+      404:
+        description: Coach not found
+    """
     coach = Coach.query.filter_by(user_id=coach_id).first()
     if not coach:
         return jsonify({'error': 'Coach not found'}), 404

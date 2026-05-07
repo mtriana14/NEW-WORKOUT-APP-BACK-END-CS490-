@@ -93,8 +93,36 @@ def leave_review(coach_id):
 
 def get_coach_reviews(coach_id):
     """
-    Get all reviews for a coach.
-    The coach_id URL param is the coach's user_id (matches profile page URL convention).
+    Get all reviews for a coach
+    ---
+    tags:
+      - Reviews
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+        description: The coach's user_id (matches profile page URL convention)
+    responses:
+      200:
+        description: Coach reviews and average rating
+        schema:
+          type: object
+          properties:
+            coach_id:
+              type: integer
+            avg_rating:
+              type: number
+              format: float
+              nullable: true
+            total:
+              type: integer
+            reviews:
+              type: array
+              items:
+                type: object
     """
     coach = Coach.query.filter_by(user_id=coach_id).first()
     if not coach:

@@ -23,10 +23,47 @@ def validate_status(status):
 
 @jwt_required()
 def create_fitnessgoal():
-    print("this should always print")
+    """
+    Create a new fitness goal for the authenticated user
+    ---
+    tags:
+      - Fitness Goals
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - goal_type
+          properties:
+            goal_type:
+              type: string
+              description: Description of the goal (e.g. "Lose weight")
+            target_value:
+              type: number
+              description: Numeric target (e.g. 75)
+            target_unit:
+              type: string
+              description: Unit of the target (e.g. "kg")
+            deadline:
+              type: string
+              format: date
+              description: Target completion date (YYYY-MM-DD)
+            status:
+              type: string
+              enum: [active, completed, deleted]
+              default: active
+    responses:
+      201:
+        description: Fitness goal created successfully
+      400:
+        description: Missing or invalid fields
+    """
     user_id = get_jwt_identity()
     data = request.json
-    print(request.json)
 
     if not data:
         return jsonify({"Failed": "No request body provided"}), 400
@@ -162,9 +199,10 @@ def get_fitnessgoal(goal_id):
 
     user_id = get_jwt_identity()
 
-    goal = FitnessGoal.query.filter_by(
-        goal_id=goal_id,
-        user_id=user_id
+    goal = FitnessGoal.query.filter(
+        FitnessGoal.goal_id == goal_id,
+        FitnessGoal.user_id == user_id,
+        FitnessGoal.status != "deleted"
     ).first()
 
     if not goal:
@@ -194,10 +232,16 @@ def get_all_fitnessgoals():
 
         goals = (
             FitnessGoal.query
-            .filter_by(user_id=user_id)
+            .filter(
+                FitnessGoal.user_id == user_id,
+                FitnessGoal.status != "deleted"
+            )
             .order_by(FitnessGoal.created_at.desc())
             .all()
         )
+
+        if not goals:
+            return jsonify({"Failed": "No fitness goals found"}), 404
 
         return jsonify({
             "Goals": [goal.to_dict() for goal in goals]

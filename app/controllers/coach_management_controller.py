@@ -25,7 +25,39 @@ def _coach_record(coach, user):
 
 
 def get_all_coaches():
-    """GET /api/admin/coaches - Returns all coaches with user info."""
+    """
+    Get all coaches with user info (admin)
+    ---
+    tags:
+      - Coach Management
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: List of all coaches
+        schema:
+          type: object
+          properties:
+            coaches:
+              type: array
+              items:
+                type: object
+                properties:
+                  coach_id:
+                    type: integer
+                  user_id:
+                    type: integer
+                  name:
+                    type: string
+                  email:
+                    type: string
+                  specialization:
+                    type: string
+                  status:
+                    type: string
+                  hourly_rate:
+                    type: number
+    """
     coaches = Coach.query.order_by(Coach.created_at.desc()).all()
     user_ids = [c.user_id for c in coaches]
     users = {u.user_id: u for u in User.query.filter(User.user_id.in_(user_ids)).all()}
@@ -213,7 +245,24 @@ def get_coach_detail(coach_id):
 
 
 def approve_coach(coach_id):
-    """Set a coach's status to approved."""
+    """
+    Approve a coach application (admin)
+    ---
+    tags:
+      - Coach Management
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Coach approved successfully
+      404:
+        description: Coach not found
+    """
     coach = Coach.query.filter_by(coach_id=coach_id).first()
     if not coach:
         return jsonify({'error': 'Coach not found'}), 404
@@ -230,7 +279,32 @@ def approve_coach(coach_id):
 
 
 def reject_coach(coach_id, reason=None):
-    """Set a coach's status to rejected."""
+    """
+    Reject a coach application (admin)
+    ---
+    tags:
+      - Coach Management
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+      - in: body
+        name: body
+        schema:
+          type: object
+          properties:
+            reason:
+              type: string
+              description: Optional rejection reason sent to the coach
+    responses:
+      200:
+        description: Coach rejected successfully
+      404:
+        description: Coach not found
+    """
     coach = Coach.query.filter_by(coach_id=coach_id).first()
     if not coach:
         return jsonify({'error': 'Coach not found'}), 404
