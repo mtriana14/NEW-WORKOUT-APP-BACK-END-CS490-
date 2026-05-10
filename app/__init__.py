@@ -30,6 +30,7 @@ def create_app():
         'http://localhost:3000',
         'http://127.0.0.1:3000',
         'https://workout-webapp-frontend-production.up.railway.app',
+        'https://new-workout-app-back-end-cs490-production.up.railway.app',
     ]
     extra_origin = os.getenv('CORS_ORIGIN')
     if extra_origin:
