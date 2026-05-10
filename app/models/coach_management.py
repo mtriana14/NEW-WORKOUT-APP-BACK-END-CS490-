@@ -2,10 +2,10 @@ from app.config.db import db
 from datetime import datetime
 
 class CoachManagement(db.Model):
-    __tablename__ = 'CoachManagement'
+    __tablename__ = 'coachmanagement'
     action_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    coach_id = db.Column(db.Integer, db.ForeignKey('Coaches.coach_id'), nullable=False)
-    admin_id = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=False)
+    coach_id = db.Column(db.Integer, db.ForeignKey('coaches.coach_id'), nullable=False)
+    admin_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     action_type = db.Column(db.Enum('suspend', 'reactivate', 'disable'), nullable=False)
     reason = db.Column(db.Text, nullable=True)
     suspension_duration = db.Column(db.String(50), nullable=True)

@@ -2,7 +2,7 @@ from app.config.db import db
 from datetime import datetime
 
 class User(db.Model):
-    __tablename__ = 'Users'
+    __tablename__ = 'users'
     user_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     first_name = db.Column(db.String(100), nullable=False)
     last_name = db.Column(db.String(100), nullable=False)

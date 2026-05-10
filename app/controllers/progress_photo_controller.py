@@ -20,13 +20,39 @@ def _allowed_file(filename: str) -> bool:
 
 def upload_progress_photo():
     """
-    POST /api/progress-photos
-    multipart/form-data with fields:
-      - photo       (file)    required
-      - label       (str)     before | progress | after (default progress)
-      - caption     (str)     optional
-      - weight      (float)   optional
-      - taken_on    (YYYY-MM-DD) optional
+    Upload a progress photo
+    ---
+    tags:
+      - Progress Photos
+    security:
+      - Bearer: []
+    consumes:
+      - multipart/form-data
+    parameters:
+      - in: formData
+        name: photo
+        type: file
+        required: true
+      - in: formData
+        name: label
+        type: string
+        enum: [before, progress, after]
+        default: progress
+      - in: formData
+        name: caption
+        type: string
+      - in: formData
+        name: weight
+        type: number
+      - in: formData
+        name: taken_on
+        type: string
+        description: YYYY-MM-DD
+    responses:
+      201:
+        description: Photo uploaded
+      400:
+        description: Missing file or invalid label/date
     """
     try:
         user_id = int(get_jwt_identity())
@@ -91,8 +117,20 @@ def upload_progress_photo():
 
 def list_my_progress_photos():
     """
-    GET /api/progress-photos
-    Optional filters: ?label=before|progress|after
+    Get your own progress photos
+    ---
+    tags:
+      - Progress Photos
+    security:
+      - Bearer: []
+    parameters:
+      - in: query
+        name: label
+        type: string
+        enum: [before, progress, after]
+    responses:
+      200:
+        description: List of progress photos
     """
     user_id = int(get_jwt_identity())
     label = request.args.get('label')
@@ -116,8 +154,24 @@ def list_my_progress_photos():
 
 def get_client_progress_photos(client_id):
     """
-    GET /api/coach/clients/<client_id>/progress-photos
-    Coach views their client's progress photos. Requires an active Hire.
+    Get a client's progress photos (coach only)
+    ---
+    tags:
+      - Progress Photos
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: client_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Client's progress photos
+      403:
+        description: Not a coach or client not assigned to you
+      404:
+        description: Coach profile not found
     """
     user_id = int(get_jwt_identity())
     role = get_jwt().get('role')
@@ -149,7 +203,24 @@ def get_client_progress_photos(client_id):
 
 
 def delete_progress_photo(photo_id):
-    """DELETE /api/progress-photos/<photo_id> — soft delete the caller's own photo."""
+    """
+    Delete a progress photo
+    ---
+    tags:
+      - Progress Photos
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: photo_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Photo deleted
+      404:
+        description: Photo not found
+    """
     user_id = int(get_jwt_identity())
 
     photo = ProgressPhoto.query.filter_by(

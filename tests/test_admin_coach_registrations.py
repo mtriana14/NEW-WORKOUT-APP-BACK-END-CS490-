@@ -37,7 +37,7 @@ def test_get_pending_registrations_empty(client):
     )
     assert resp.status_code == 200
     data = resp.json
-    assert 'registrations' in data or 'Registrations' in data
+    assert 'pending_coaches' in data
 
 
 def test_get_pending_registrations_with_data(client):
@@ -53,7 +53,7 @@ def test_get_pending_registrations_with_data(client):
     )
     assert resp.status_code == 200
     data = resp.json
-    registrations = data.get('Registrations') or data.get('registrations', [])
+    registrations = data.get('pending_coaches', [])
     assert len(registrations) >= 1
 
 

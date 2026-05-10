@@ -27,9 +27,36 @@ def _payment_to_invoice(payment, other_party_name=None):
 
 def get_my_invoices():
     """
-    UC 7.3 — GET /api/billing/invoices
-    Client-facing: all payments the logged-in user has made.
-    Optional query params: ?status=completed&limit=50
+    Get all invoices for the current user
+    ---
+    tags:
+      - Billing & Revenue
+    security:
+      - Bearer: []
+    parameters:
+      - in: query
+        name: status
+        type: string
+        description: Filter by payment status (e.g., completed, pending)
+      - in: query
+        name: limit
+        type: integer
+        default: 100
+        description: Maximum number of records to return
+    responses:
+      200:
+        description: A list of user invoices and total paid amount
+        schema:
+          type: object
+          properties:
+            total_paid:
+              type: number
+            count:
+              type: integer
+            invoices:
+              type: array
+              items:
+                type: object
     """
     user_id = int(get_jwt_identity())
     status = request.args.get('status')
@@ -47,7 +74,6 @@ def get_my_invoices():
         Payment.paid_at.desc()
     ).limit(limit).all()
 
-    # Build a coach_id -> "First Last" lookup in one shot
     coach_ids = {p.coach_id for p in payments}
     coach_map = {}
     if coach_ids:
@@ -73,8 +99,25 @@ def get_my_invoices():
 
 def get_invoice_details(payment_id):
     """
-    UC 7.3 — GET /api/billing/invoices/<payment_id>
-    Returns a single invoice. User can only see their own.
+    Get detailed information for a specific invoice
+    ---
+    tags:
+      - Billing & Revenue
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: payment_id
+        type: integer
+        required: true
+        description: ID of the payment/invoice
+    responses:
+      200:
+        description: Detailed invoice object including client, coach, and subscription data
+      403:
+        description: Forbidden - User does not have permission to view this invoice
+      404:
+        description: Invoice not found
     """
     user_id = int(get_jwt_identity())
     claims = get_jwt()
@@ -83,9 +126,7 @@ def get_invoice_details(payment_id):
     if not payment:
         return jsonify({'error': 'Invoice not found'}), 404
 
-    # Client can see if it's theirs; admin can see anything
     if payment.client_id != user_id and claims.get('role') != 'admin':
-        # Also allow the coach who received it
         coach = Coach.query.filter_by(user_id=user_id).first()
         if not coach or coach.coach_id != payment.coach_id:
             return jsonify({'error': 'Forbidden'}), 403
@@ -134,9 +175,49 @@ def get_invoice_details(payment_id):
 
 def get_coach_revenue():
     """
-    UC 7.3 — GET /api/coach/revenue
-    Coach-facing: total earnings, earnings this month, and a transactions list.
-    Optional params: ?status=completed&limit=100
+    Get revenue summary and transactions for a coach
+    ---
+    tags:
+      - Billing & Revenue
+    security:
+      - Bearer: []
+    parameters:
+      - in: query
+        name: status
+        type: string
+        description: Filter transactions by status
+      - in: query
+        name: limit
+        type: integer
+        default: 100
+        description: Max transactions to return
+    responses:
+      200:
+        description: Summary of earnings and list of recent transactions
+        schema:
+          type: object
+          properties:
+            summary:
+              type: object
+              properties:
+                total_earned:
+                  type: number
+                this_month:
+                  type: number
+                active_clients:
+                  type: integer
+                currency:
+                  type: string
+            transactions:
+              type: array
+              items:
+                type: object
+            count:
+              type: integer
+      403:
+        description: Forbidden - Coach access required
+      404:
+        description: Coach profile not found
     """
     user_id = int(get_jwt_identity())
     claims = get_jwt()
@@ -162,14 +243,12 @@ def get_coach_revenue():
         Payment.paid_at.desc()
     ).limit(limit).all()
 
-    # Aggregate totals (completed only)
     total_earned = (
         db.session.query(func.coalesce(func.sum(Payment.amount), 0))
         .filter(Payment.coach_id == coach.coach_id, Payment.status == 'completed')
         .scalar()
     )
 
-    # This month (first of month -> now)
     now = datetime.utcnow()
     month_start = datetime(now.year, now.month, 1)
     month_earned = (
@@ -182,14 +261,12 @@ def get_coach_revenue():
         .scalar()
     )
 
-    # Distinct paying clients
     active_clients = (
         db.session.query(func.count(func.distinct(Payment.client_id)))
         .filter(Payment.coach_id == coach.coach_id, Payment.status == 'completed')
         .scalar()
     )
 
-    # Lookup client names for the transactions list
     client_ids = {p.client_id for p in payments}
     client_map = {}
     if client_ids:

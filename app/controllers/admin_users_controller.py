@@ -6,8 +6,63 @@ from datetime import datetime
 
 def get_all_users():
     """
-    GET /api/admin/users?role=client|coach|admin
-    Returns all users with counts broken down by role.
+    Get all users with summary counts
+    ---
+    tags:
+      - Admin User Management
+    security:
+      - Bearer: []
+    parameters:
+      - in: query
+        name: role
+        type: string
+        enum: [all, client, coach, admin]
+        default: all
+        description: Filter the returned user list by role.
+    responses:
+      200:
+        description: A list of users and global counts across all roles.
+        schema:
+          type: object
+          properties:
+            users:
+              type: array
+              items:
+                type: object
+                properties:
+                  user_id:
+                    type: integer
+                  name:
+                    type: string
+                  first_name:
+                    type: string
+                  last_name:
+                    type: string
+                  email:
+                    type: string
+                  role:
+                    type: string
+                  is_active:
+                    type: boolean
+                  phone:
+                    type: string
+                  last_login:
+                    type: string
+                  created_at:
+                    type: string
+            counts:
+              type: object
+              properties:
+                total:
+                  type: integer
+                clients:
+                  type: integer
+                coaches:
+                  type: integer
+                admins:
+                  type: integer
+                active:
+                  type: integer
     """
     role_filter = request.args.get('role')
 
@@ -17,7 +72,6 @@ def get_all_users():
 
     users = query.order_by(User.created_at.desc()).all()
 
-    # Counts always across ALL users regardless of filter
     total      = User.query.count()
     clients    = User.query.filter_by(role='client').count()
     coaches    = User.query.filter_by(role='coach').count()
@@ -52,9 +106,36 @@ def get_all_users():
 
 def update_user_status(user_id):
     """
-    PUT /api/admin/users/<user_id>/status
-    Body: { is_active: true|false }
-    Toggles a user's active status.
+    Update a user's active status
+    ---
+    tags:
+      - Admin User Management
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: user_id
+        type: integer
+        required: true
+        description: The ID of the user to update.
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - is_active
+          properties:
+            is_active:
+              type: boolean
+              description: Whether the user should be active or deactivated.
+    responses:
+      200:
+        description: User status updated successfully.
+      400:
+        description: is_active field is missing.
+      404:
+        description: User not found.
     """
     data = request.get_json() or {}
 

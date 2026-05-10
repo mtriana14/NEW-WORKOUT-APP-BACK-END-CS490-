@@ -7,6 +7,37 @@ from flask_jwt_extended import get_jwt_identity
 
 def apply_as_coach():
     """
+    Submit an application to become a coach
+    ---
+    tags:
+      - Coach Onboarding
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            qualifications:
+              type: string
+              example: "Certified Personal Trainer (NASM)"
+            specialty:
+              type: string
+              example: "Weight Loss & Strength Training"
+            document_links:
+              type: string
+              example: "https://drive.google.com/cert.pdf"
+    responses:
+      201:
+        description: Coach application submitted successfully
+      200:
+        description: Coach application resubmitted successfully (after previous rejection)
+      409:
+        description: Already have a pending or approved application
+    """
+    """
     Logged-in user submits an application to become a coach.
     First-time: creates a CoachRegistrations record (status='pending')
     Previously rejected: updates the record and resets to 'pending'
@@ -63,6 +94,34 @@ def apply_as_coach():
 
 
 def get_my_application():
+    """
+    Get the status and details of the current user's coach application
+    ---
+    tags:
+      - Coach Onboarding
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Coach application details
+        schema:
+          type: object
+          properties:
+            reg_id:
+              type: integer
+            application_status:
+              type: string
+            qualifications:
+              type: string
+            specialty:
+              type: string
+            document_links:
+              type: string
+            rejection_reason:
+              type: string
+      404:
+        description: No coach application found for this user
+    """
     """ Returns the logged-in user's coach application status."""
     user_id = int(get_jwt_identity())
 

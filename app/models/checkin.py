@@ -5,7 +5,7 @@ class Check_in(db.Model):
     __tablename__ = "dailycheckin"
 
     checkin_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     checkin_date = db.Column(db.Date, nullable=False)
     mood = db.Column(Enum('great', 'good', 'okay', 'bad', 'awful', name='mood_enum'))
     energy_level = db.Column(Enum('High', 'Medium', 'Low', 'Running on Empty', name='energy_enum'))

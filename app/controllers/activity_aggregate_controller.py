@@ -3,7 +3,7 @@ from app.config.db import db
 from app.models.activity_log import ActivityLog
 from app.models.hire import Hire
 from app.models.coach import Coach
-from flask_jwt_extended import get_jwt_identity, get_jwt
+from flask_jwt_extended import get_jwt_identity, get_jwt, jwt_required
 from sqlalchemy import func, cast, Date
 from datetime import date, datetime, timedelta
 
@@ -127,10 +127,29 @@ def _aggregate(user_id, period):
 
 # ---------- endpoints -------------------------------------------------------
 
+@jwt_required()
 def get_my_aggregates():
     """
-    GET /api/logs/aggregate?period=week|month|year
-    Returns aggregated stats for the currently logged-in user.
+    Get aggregated activity stats for the current user
+    ---
+    tags:
+      - Activity Logs
+    security:
+      - Bearer: []
+    parameters:
+      - in: query
+        name: period
+        type: string
+        enum: [week, month, year]
+        default: week
+        description: The time range to aggregate
+    responses:
+      200:
+        description: Aggregated activity data retrieved successfully
+      400:
+        description: Invalid period provided
+      401:
+        description: Missing or invalid token
     """
     user_id = int(get_jwt_identity())
     period = request.args.get('period', 'week').lower()
@@ -141,10 +160,36 @@ def get_my_aggregates():
     return jsonify(data), 200
 
 
+@jwt_required()
 def get_client_aggregates(client_id):
     """
-    GET /api/coach/clients/<client_id>/aggregate?period=week|month|year
-    Coach-only. Verifies that the coach is actually hired by the client.
+    Get aggregated activity stats for a specific client (Coach only)
+    ---
+    tags:
+      - Coach Management
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: client_id
+        type: integer
+        required: true
+        description: ID of the client to view
+      - in: query
+        name: period
+        type: string
+        enum: [week, month, year]
+        default: week
+        description: The time range to aggregate
+    responses:
+      200:
+        description: Aggregated client data retrieved successfully
+      400:
+        description: Invalid period provided
+      403:
+        description: Forbidden - Coach access required or client not assigned to coach
+      404:
+        description: Coach profile not found
     """
     user_id = int(get_jwt_identity())
     claims = get_jwt()

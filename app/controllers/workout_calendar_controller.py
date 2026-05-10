@@ -12,9 +12,36 @@ from datetime import datetime, timedelta, date
 
 def assign_plan_to_date():
     """
-    POST /api/workout-calendar
-    Assigns an existing workout plan to a specific date.
-    Body: { plan_id, scheduled_date }
+    Schedule a workout plan on a specific date
+    ---
+    tags:
+      - Workout Calendar
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - plan_id
+            - scheduled_date
+          properties:
+            plan_id:
+              type: integer
+            scheduled_date:
+              type: string
+              example: "2026-04-30"
+    responses:
+      201:
+        description: Plan scheduled
+      400:
+        description: Missing fields or invalid date
+      404:
+        description: Workout plan not found
+      409:
+        description: Plan already scheduled on that date
     """
     user_id = int(get_jwt_identity())
     data = request.get_json() or {}
@@ -59,9 +86,30 @@ def assign_plan_to_date():
 
 def mark_completed(calendar_id):
     """
-    PATCH /api/workout-calendar/<calendar_id>/complete
-    Mark a scheduled workout as completed or incomplete.
-    Body: { is_completed: true|false }
+    Mark a scheduled workout as completed or incomplete
+    ---
+    tags:
+      - Workout Calendar
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: calendar_id
+        type: integer
+        required: true
+      - in: body
+        name: body
+        schema:
+          type: object
+          properties:
+            is_completed:
+              type: boolean
+              default: true
+    responses:
+      200:
+        description: Entry updated
+      404:
+        description: Calendar entry not found
     """
     user_id = int(get_jwt_identity())
     data = request.get_json() or {}
@@ -84,8 +132,22 @@ def mark_completed(calendar_id):
 
 def delete_calendar_entry(calendar_id):
     """
-    DELETE /api/workout-calendar/<calendar_id>
-    Remove a plan from the calendar.
+    Remove a plan from the calendar
+    ---
+    tags:
+      - Workout Calendar
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: calendar_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Removed from calendar
+      404:
+        description: Calendar entry not found
     """
     user_id = int(get_jwt_identity())
 
@@ -104,9 +166,22 @@ def delete_calendar_entry(calendar_id):
 
 def get_my_weekly_calendar():
     """
-    GET /api/workout-calendar/week?start_date=YYYY-MM-DD
-    Returns all scheduled plans for a week window.
-    Default is the current week if no start_date provided.
+    Get scheduled workouts for a week
+    ---
+    tags:
+      - Workout Calendar
+    security:
+      - Bearer: []
+    parameters:
+      - in: query
+        name: start_date
+        type: string
+        description: Monday of the week to view (YYYY-MM-DD). Defaults to current week.
+    responses:
+      200:
+        description: Calendar grouped by day for the requested week
+      400:
+        description: Invalid date format
     """
     user_id = int(get_jwt_identity())
 
@@ -153,9 +228,48 @@ def get_my_weekly_calendar():
 
 def add_exercise_to_plan(plan_id):
     """
-    POST /api/workout-plans/<plan_id>/exercises
-    Add an exercise to a workout plan.
-    Body: { exercise_id, num_sets, reps, num_length, rest_time, notes, sort_order }
+    Add an exercise to a workout plan
+    ---
+    tags:
+      - Workout Plans
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: plan_id
+        type: integer
+        required: true
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - exercise_id
+          properties:
+            exercise_id:
+              type: integer
+            num_sets:
+              type: integer
+            reps:
+              type: integer
+            num_length:
+              type: number
+            rest_time:
+              type: integer
+            sort_order:
+              type: integer
+            notes:
+              type: string
+    responses:
+      201:
+        description: Exercise added to plan
+      400:
+        description: Missing exercise_id
+      403:
+        description: Forbidden
+      404:
+        description: Plan or exercise not found
     """
     user_id = int(get_jwt_identity())
     role = get_jwt().get('role')
@@ -200,8 +314,22 @@ def add_exercise_to_plan(plan_id):
 
 def get_plan_exercises(plan_id):
     """
-    GET /api/workout-plans/<plan_id>/exercises
-    Returns all exercises in a workout plan.
+    Get all exercises in a workout plan
+    ---
+    tags:
+      - Workout Plans
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: plan_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Exercises in the plan
+      404:
+        description: Workout plan not found
     """
     plan = WorkoutPlan.query.get(plan_id)
     if not plan:
@@ -219,8 +347,28 @@ def get_plan_exercises(plan_id):
 
 def remove_exercise_from_plan(plan_id, entry_id):
     """
-    DELETE /api/workout-plans/<plan_id>/exercises/<entry_id>
-    Remove an exercise from a workout plan.
+    Remove an exercise from a workout plan
+    ---
+    tags:
+      - Workout Plans
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: plan_id
+        type: integer
+        required: true
+      - in: path
+        name: entry_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Exercise removed
+      403:
+        description: Forbidden
+      404:
+        description: Plan or exercise entry not found
     """
     user_id = int(get_jwt_identity())
     role = get_jwt().get('role')

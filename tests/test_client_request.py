@@ -124,16 +124,21 @@ class TestSendRequest:
 
 class TestGetPendingRequests:
 
+    @patch('app.controllers.client_request_controller.User')
     @patch('app.controllers.client_request_controller.ClientRequest')
     @patch('app.controllers.client_request_controller.Coach')
-    def test_get_pending_requests_success(self, mock_coach_cls, mock_cr_cls, client):
+    def test_get_pending_requests_success(self, mock_coach_cls, mock_cr_cls, mock_user_cls, client):
         """Coach can retrieve their pending requests."""
         mock_coach_cls.query.filter_by.return_value.first.return_value = MagicMock()
+        mock_user_cls.query.filter_by.return_value.first.return_value = None
 
         mock_req = MagicMock()
         mock_req.request_id = 1
         mock_req.client_id = 5
+        mock_req.coach_id = 1
         mock_req.message = 'Please coach me'
+        mock_req.status = 'pending'
+        mock_req.responded_at = None
         mock_req.created_at = '2026-01-01'
         mock_cr_cls.query.filter_by.return_value.all.return_value = [mock_req]
 

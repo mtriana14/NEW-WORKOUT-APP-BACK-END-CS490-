@@ -1,5 +1,5 @@
 from flask import Blueprint
-from app.controllers.auth_controller import (register, login, logout, update_user, delete_user, update_coach)
+from app.controllers.auth_controller import (register, login, logout, update_user, delete_user, update_coach, reset_password)
 from app.controllers.pfp_controller import upload_pfp
 from app.middleware.auth_middleware import login_required
 
@@ -13,3 +13,4 @@ auth_bp.route('/auth/update', methods=["PATCH"])(update_user)
 auth_bp.route('/auth/delete', methods=["DELETE"])(delete_user)
 auth_bp.route('/auth/update/upload_pfp', methods = ["PATCH"])(login_required(upload_pfp))
 auth_bp.route('/auth/update/update_coach', methods = ["PATCH"])(update_coach)
+auth_bp.route('/auth/reset-password', methods=['POST'])(reset_password)

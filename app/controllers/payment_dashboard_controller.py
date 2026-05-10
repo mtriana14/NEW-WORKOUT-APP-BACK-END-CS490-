@@ -8,7 +8,17 @@ from sqlalchemy import func
 
 
 def get_payment_summary():
-    """GET /api/admin/payments/summary and /api/admin/payments/stats"""
+    """
+    Get payment summary and revenue statistics (admin)
+    ---
+    tags:
+      - Payments
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Total revenue, transaction count, and breakdown by status
+    """
     total_revenue = db.session.query(
         func.sum(Payment.amount)
     ).filter_by(status='completed').scalar() or 0
@@ -38,7 +48,26 @@ def get_payment_summary():
 
 
 def get_all_payments():
-    """GET /api/admin/payments"""
+    """
+    Get paginated list of all payments (admin)
+    ---
+    tags:
+      - Payments
+    security:
+      - Bearer: []
+    parameters:
+      - in: query
+        name: page
+        type: integer
+        default: 1
+      - in: query
+        name: per_page
+        type: integer
+        default: 25
+    responses:
+      200:
+        description: Paginated payment list
+    """
     page     = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 25, type=int)
 
@@ -85,7 +114,24 @@ def get_all_payments():
 
 
 def get_payment_detail(payment_id):
-    """GET /api/admin/payments/<payment_id>"""
+    """
+    Get full details for a single payment (admin)
+    ---
+    tags:
+      - Payments
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: payment_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Payment detail
+      404:
+        description: Payment not found
+    """
     payment = Payment.query.filter_by(payment_id=payment_id).first()
     if not payment:
         return jsonify({'error': 'Payment not found'}), 404
@@ -112,7 +158,26 @@ def get_payment_detail(payment_id):
 
 
 def refund_payment(payment_id):
-    """POST /api/admin/payments/<payment_id>/refund"""
+    """
+    Refund a payment and notify the client (admin)
+    ---
+    tags:
+      - Payments
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: payment_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Payment refunded
+      400:
+        description: Payment already refunded
+      404:
+        description: Payment not found
+    """
     payment = Payment.query.filter_by(payment_id=payment_id).first()
     if not payment:
         return jsonify({'error': 'Payment not found'}), 404
@@ -139,7 +204,24 @@ def refund_payment(payment_id):
 
 
 def get_coach_payment_summary(coach_id):
-    """GET /api/admin/payments/coach/<coach_id>"""
+    """
+    Get total earnings and transaction count for a coach (admin)
+    ---
+    tags:
+      - Payments
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: coach_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Coach payment summary
+      404:
+        description: Coach not found
+    """
     coach = Coach.query.filter_by(coach_id=coach_id).first()
     if not coach:
         return jsonify({'error': 'Coach not found'}), 404

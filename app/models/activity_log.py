@@ -2,13 +2,13 @@ from app.config.db import db
 from datetime import datetime
 
 class ActivityLog(db.Model):
-    __tablename__ = 'ActivityLogs'
+    __tablename__ = 'activitylogs'
 
     log_id           = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id          = db.Column(db.Integer, db.ForeignKey('Users.user_id'), nullable=False)
+    user_id          = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     activity_type    = db.Column(db.Enum('strength', 'cardio', 'steps', 'calories'), nullable=False)
     # Strength fields
-    exercise_id      = db.Column(db.Integer, db.ForeignKey('Exercises.e_id'), nullable=True)
+    exercise_id      = db.Column(db.Integer, db.ForeignKey('exercises.e_id'), nullable=True)
     sets_completed   = db.Column(db.Integer, nullable=True)
     reps_completed   = db.Column(db.Integer, nullable=True)
     weight_used      = db.Column(db.Numeric(6, 2), nullable=True)
